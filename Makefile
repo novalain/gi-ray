@@ -7,11 +7,11 @@ bin=./bin/
 
 all: Raytracer
 
-Raytracer: $(src)main.cpp
-	$(CC) $(src)main.cpp -o $(bin)GI-Ray -Wall
+Raytracer: $(src)main.cc
+	$(CC) $(src)main.cc -o $(bin)GI-Ray -Wall
 
-main.o: main.cpp
-	$(CC) -c main.cpp
+main.o: main.cc
+	$(CC) -c main.cc
 
 run:
 	./bin/GI-Ray
