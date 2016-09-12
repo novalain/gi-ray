@@ -2,6 +2,9 @@
 #include <glm/glm.hpp>
 #include "camera.h"
 #include "utils/file_utils.h"
+#include "vertex.h"
+#include "triangle.h"
+#include "ray.h"
 
 #define IMG_WIDTH 256
 #define IMG_HEIGHT 256
@@ -27,5 +30,6 @@ void saveDummyImage() {
 int main() {
   std::cout << "Hello World" << std::endl;
   Camera cam;
+
   saveDummyImage();
 }
