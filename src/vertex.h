@@ -6,11 +6,11 @@
 class Vertex
 {
 private:
-    glm::vec4 coordinates;
+    glm::vec4 coordinates_;
 
     //TODO: Implement the following?
-    //ColorDbl color;
-    //Vec2 textureCoord;
+    //glm::vec3 color_;
+    //glm::vec2 textureCoord;
 public:
     Vertex();
 
@@ -18,24 +18,24 @@ public:
 
     Vertex(glm::vec3 pos);
 
-    double GetX() { return coordinates.x; }
-    double GetY() { return coordinates.y; }
-    double GetZ() { return coordinates.z; }
-    double GetW() { return coordinates.w; }
+    double GetX() { return coordinates_.x; }
+    double GetY() { return coordinates_.y; }
+    double GetZ() { return coordinates_.z; }
+    double GetW() { return coordinates_.w; }
 
-    glm::vec3 GetPos() { return glm::vec3(coordinates); }
-    glm::vec4 GetCoords() { return coordinates; }
+    glm::vec3 GetPos() { return glm::vec3(coordinates_); }
+    glm::vec4 GetCoords() { return coordinates_; }
 
-    void SetX(double x) { coordinates.x = x; }
-    void SetY(double y) { coordinates.y = y; }
-    void SetZ(double z) { coordinates.z = z; }
-    void SetW(double w) { coordinates.w = w; }
+    void SetX(double x) { coordinates_.x = x; }
+    void SetY(double y) { coordinates_.y = y; }
+    void SetZ(double z) { coordinates_.z = z; }
+    void SetW(double w) { coordinates_.w = w; }
 
     void Print();
 
     //TODO: Implment the following ?
-    // ColorDbl GetColor() { return color; }
-    // Vec2 GetTextureCoord() { return textureCoord; }
+    // glm::vec3 GetColor() { return color; }
+    // glm::vec2 GetTextureCoord() { return textureCoord; }
 
 protected:
 };

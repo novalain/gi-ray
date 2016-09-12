@@ -2,6 +2,8 @@
 #include <glm/glm.hpp>
 #include "camera.h"
 #include "vertex.h"
+#include "triangle.h"
+#include "ray.h"
 
 int main() {
 
