@@ -21,7 +21,7 @@ void saveDummyImage() {
     }
   }
 
-  FileUtils::SaveImage("results/img.ppm", IMG_WIDTH, IMG_HEIGHT, arr);
+  FileUtils::SaveImage("results/img.png", IMG_WIDTH, IMG_HEIGHT, arr);
 }
 
 int main() {
