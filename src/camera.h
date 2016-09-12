@@ -4,8 +4,16 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#define WIDTH 1000
-#define HEIGHT 1000
+/**
+    Warning: Stack size is OS-dependent and max is 8182 kb on Ubuntu 64
+    declaring an array on the stack with width*height*4*3 < 8182000 => width*height < 681833
+    i.e size over 825 (width == height) will throw
+
+    TODO: We might want to declare this array on the heap
+    (no restrictions on size except when RAM is filled up)
+*/
+#define WIDTH 500
+#define HEIGHT 500
 
 class Camera
 {
@@ -17,7 +25,7 @@ private:
     float focal_length_;
     float fov_; // field of view
 
-    glm::vec3 framebuffer[ WIDTH * HEIGHT ];
+    glm::vec3 framebuffer[ 100 * 100 ];
 
     //TODO: aspect ratio?
     //float aspect_ratio_;
