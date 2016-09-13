@@ -1,7 +1,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include "camera.h"
-#include "utils/file_utils.h"
+#include "file_utils.h"
 #include "vertex.h"
 #include "triangle.h"
 #include "ray.h"
