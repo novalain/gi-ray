@@ -14,12 +14,9 @@ private:
 
 public:
   Pixel() {}
-
   Pixel(Vertex* v1, Vertex* v2) : v_start_(v1), v_end_(v2) {}
 
-  Ray GetRay() { return ray_; }
-
-protected:
+  Ray get_ray() { return ray_; }
 };
 
 #endif // PIXEL_H

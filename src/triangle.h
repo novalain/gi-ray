@@ -14,18 +14,15 @@ private:
 
 public:
   Triangle() {}
-
   Triangle(Vertex v1, Vertex v2, Vertex v3) : v1_(v1), v2_(v2), v3_(v3) {}
 
-  Triangle(glm::vec3 pos);
+  glm::vec3 get_normal() { return normal_; }
+  glm::vec3 get_color() { return color_; }
+
+  void Print();
 
   //TODO: implement this
   // RayIntersection(Ray ray);
-
-  glm::vec3 GetNormal() { return normal_; }
-  glm::vec3 GetColor() { return color_; }
-
-  void Print();
 
 protected:
 };
