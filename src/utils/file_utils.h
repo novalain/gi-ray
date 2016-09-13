@@ -1,15 +1,13 @@
 #ifndef FILE_UTILS_H
 #define FILE_UTILS_H
 
-#include <iostream>
-
 class FileUtils {
  public:
   // TODO: Move to implementation file
   template <std::size_t x, std::size_t y, std::size_t z>
   static void SaveImage(const char* img_name,
-                       int img_width, int img_height,
-                       float (&image)[x][y][z]) {
+                        int img_width, int img_height,
+                        float (&image)[x][y][z]) {
     FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
     (void)fprintf(fp, "P6\n%d %d\n255\n", img_width, img_height);
     for (int i = 0; i < img_width; i++ ) {

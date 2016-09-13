@@ -7,19 +7,19 @@
 class Ray
 {
 private:
-    Vertex* v_start_;
-    Vertex* v_end_;
+  Vertex* v_start_;
+  Vertex* v_end_;
 
-    Triangle* intersecting_triangle_;
+  Triangle* intersecting_triangle_;
 
 public:
-    Ray() {}
+  Ray() {}
 
-    Ray(Vertex* v1, Vertex* v2) : v_start_(v1), v_end_(v2) {}
+  Ray(Vertex* v1, Vertex* v2) : v_start_(v1), v_end_(v2) {}
 
-    //TODO: implement GetTriangle() ?
-    //TODO: implement GetStartVertex() ?
-    //TODO: implement GetEndVertex() ?
+  //TODO: implement GetTriangle() ?
+  //TODO: implement GetStartVertex() ?
+  //TODO: implement GetEndVertex() ?
 
 protected:
 };
