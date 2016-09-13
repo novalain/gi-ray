@@ -1,5 +1,6 @@
 CC=g++ -std=c++14
 src=./src/
+include=./include/
 bin=./bin/
 build=./build/
 execfile=GI-Ray
@@ -10,7 +11,7 @@ execfile=GI-Ray
 all: allinone #raytracer
 
 allinone:
-	$(CC) $(src)main.cc $(src)camera.cc $(src)vertex.cc $(src)triangle.cc $(src)ray.cc $(src)pixel.cc -o $(bin)$(execfile) #-Wall
+	$(CC) $(src)main.cc $(src)camera.cc $(src)vertex.cc $(src)triangle.cc $(src)ray.cc $(src)pixel.cc -o -I$(include) $(bin)$(execfile) #-Wall
 
 raytracer: $(build)main.o
 	$(CC) $(build)main.o $(build)camera.o $(build)vertex.o $(build)triangle.o $(build)ray.o $(build)pixel.o -o $(bin)$(execfile) #-Wall
