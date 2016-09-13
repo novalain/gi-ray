@@ -12,7 +12,7 @@ execfile=GI-Ray
 all: allinone #raytracer
 
 allinone: #$(src)main.cc $(src)camera.cc $(src)vertex.cc $(src)triangle.cc $(src)ray.cc
-	$(CC) $(src)main.cc $(src)camera.cc $(src)$(geometry)vertex.cc $(src)$(geometry)triangle.cc $(src)ray.cc -o $(bin)$(execfile) -I$(include) -Wall
+	$(CC) $(src)main.cc $(src)scene.cc $(src)camera.cc $(src)$(geometry)vertex.cc $(src)$(geometry)triangle.cc $(src)ray.cc -o $(bin)$(execfile) -I$(include) -Wall
 
 #raytracer: main.o
 #	$(CC) $(build)main.o $(build)camera.o $(build)vertex.o $(build)triangle.o $(build)ray.o -o $(bin)$(execfile) -Wall
