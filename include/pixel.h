@@ -15,7 +15,10 @@ private:
 public:
   Pixel() {}
 
+  glm::vec3 get_color() { return color_; }
   Ray* get_ray_pointer() { return ray_; }
+
+  void set_color(glm::vec3 color) { color_ = color; }
 };
 
 #endif // PIXEL_H
