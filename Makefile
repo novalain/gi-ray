@@ -1,10 +1,10 @@
 CC=g++ -std=c++14
 src=./src/
-include=./include/
-geometry=./src/geometry/
+include=-I./include/
+geo=./src/geometry/
 bin=./bin/
-build=./build/
-execfile=GI-Ray
+bld=./build/
+execfile=$(bin)GI-Ray
 
 #CFLAGS= -c -Wall
 #WARNINGS = -Wall
@@ -12,34 +12,37 @@ execfile=GI-Ray
 all: raytracer #allinone
 
 allinone:
-	$(CC) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geometry)vertex.cc $(geometry)triangle.cc $(src)ray.cc -o $(bin)$(execfile) -I$(include) #-Wall
+	$(CC) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)vertex.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
 
-raytracer: $(build)main.o
-	$(CC) $(build)main.o $(build)scene.o $(build)camera.o $(build)vertex.o $(build)triangle.o $(build)ray.o $(build)pixel.o -o $(bin)$(execfile) #-v -Wall
+raytracer: $(bld)main.o
+	$(CC) $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)vertex.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
 
- $(build)main.o: $(src)main.cc $(build)camera.o $(build)ray.o $(build)scene.o
-	$(CC) -c $(src)main.cc -o $(build)main.o -I$(include)
+ $(bld)main.o: $(src)main.cc $(bld)camera.o $(bld)ray.o $(bld)scene.o
+	$(CC) $(include) -o $(bld)main.o -c $(src)main.cc
 
- $(build)camera.o: $(src)camera.cc $(build)pixel.o
-	$(CC) -c $(src)camera.cc -o $(build)camera.o -I$(include)
+ $(bld)camera.o: $(src)camera.cc $(bld)pixel.o
+	$(CC) $(include) -o $(bld)camera.o -c $(src)camera.cc
 
- $(build)vertex.o: $(geometry)vertex.cc
-	$(CC) -c $(geometry)vertex.cc -o $(build)vertex.o -I$(include)
+ $(bld)vertex.o: $(geo)vertex.cc
+	$(CC) $(include) -o $(bld)vertex.o -c $(geo)vertex.cc
 
- $(build)triangle.o: $(geometry)triangle.cc  $(build)vertex.o
-	$(CC) -c $(geometry)triangle.cc -o $(build)triangle.o -I$(include)
+ $(bld)triangle.o: $(geo)triangle.cc  $(bld)vertex.o
+	$(CC) $(include) -o $(bld)triangle.o -c $(geo)triangle.cc
 
- $(build)ray.o: $(src)ray.cc  $(build)triangle.o
-	$(CC) -c $(src)ray.cc -o $(build)ray.o -I$(include)
+ $(bld)ray.o: $(src)ray.cc  $(bld)triangle.o
+	$(CC) $(include) -o $(bld)ray.o -c $(src)ray.cc
 
- $(build)pixel.o: $(src)pixel.cc $(build)ray.o
-	$(CC) -c $(src)pixel.cc -o $(build)pixel.o -I$(include)
+ $(bld)pixel.o: $(src)pixel.cc $(bld)ray.o
+	$(CC) $(include) -o $(bld)pixel.o -c $(src)pixel.cc
 
- $(build)scene.o: $(src)scene.cc $(build)triangle.o
-	$(CC) -c $(src)scene.cc -o $(build)scene.o -I$(include)
+ $(bld)scene.o: $(src)scene.cc $(bld)triangle.o
+	$(CC) $(include) -o $(bld)scene.o -c $(src)scene.cc
 
 run:
-	./bin/GI-Ray
+	$(execfile)
 
 clear:
-	rm -rf $(build)*.o $(bin)$(execfile)
+	rm -rf $(bld)*.o $(execfile)
+
+clearbld:
+	rm -rf $(bld)*.o
