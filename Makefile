@@ -26,7 +26,7 @@ raytracer: $(bld)main.o
  $(bld)triangle.o: $(geo)triangle.cc
 	$(CC) $(include) -o $(bld)triangle.o -c $(geo)triangle.cc
 
- $(bld)ray.o: $(src)ray.cc  $(bld)triangle.o
+ $(bld)ray.o: $(src)ray.cc
 	$(CC) $(include) -o $(bld)ray.o -c $(src)ray.cc
 
  $(bld)pixel.o: $(src)pixel.cc $(bld)ray.o
