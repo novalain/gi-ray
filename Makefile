@@ -12,10 +12,10 @@ execfile=$(bin)GI-Ray
 all: raytracer #allinone
 
 allinone:
-	$(CC) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)vertex.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
+	$(CC) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
 
 raytracer: $(bld)main.o
-	$(CC) $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)vertex.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
+	$(CC) $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
 
  $(bld)main.o: $(src)main.cc $(bld)camera.o $(bld)ray.o $(bld)scene.o
 	$(CC) $(include) -o $(bld)main.o -c $(src)main.cc
@@ -23,10 +23,7 @@ raytracer: $(bld)main.o
  $(bld)camera.o: $(src)camera.cc $(bld)pixel.o
 	$(CC) $(include) -o $(bld)camera.o -c $(src)camera.cc
 
- $(bld)vertex.o: $(geo)vertex.cc
-	$(CC) $(include) -o $(bld)vertex.o -c $(geo)vertex.cc
-
- $(bld)triangle.o: $(geo)triangle.cc  $(bld)vertex.o
+ $(bld)triangle.o: $(geo)triangle.cc
 	$(CC) $(include) -o $(bld)triangle.o -c $(geo)triangle.cc
 
  $(bld)ray.o: $(src)ray.cc  $(bld)triangle.o
