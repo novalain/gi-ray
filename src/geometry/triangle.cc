@@ -1,17 +1,15 @@
 #include "triangle.h"
 #include <iostream>
 
-// TODO: Decide which way is best! Here or in .h file????
-// Triangle::Triangle() {}
+Triangle::Triangle(Vertex v1, Vertex v2, Vertex v3) : v1_(v1), v2_(v2), v3_(v3) {
+    color_ = COLOR_WHITE;
+    CalcNormal();
+}
 
-// Triangle::Triangle(Vertex v1, Vertex v2, Vertex v3) {
-//   v1_ = v1;
-//   v2_ = v2;
-//   v3_ = v3;
-// }
+Triangle::Triangle(Vertex v1, Vertex v2, Vertex v3, glm::vec3 color) : v1_(v1), v2_(v2), v3_(v3), color_(color) {
+    CalcNormal();
+}
 
-void Triangle::Print() {
-  v1_.Print();
-  v2_.Print();
-  v3_.Print();
+void Triangle::CalcNormal() {
+    normal_ = glm::cross(v2_-v1_,v3_-v2_);
 }

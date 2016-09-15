@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <string>
-#include "vertex.h"
+#include "commons.h"
 #include "pixel.h"
 
 /**

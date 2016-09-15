@@ -1,7 +1,7 @@
 #ifndef RAY_H
 #define RAY_H
 
-#include "vertex.h"
+#include "commons.h"
 #include "triangle.h"
 
 class Ray
