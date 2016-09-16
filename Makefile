@@ -5,7 +5,6 @@ geo=./src/geometry/
 bin=./bin/
 bld=./build/
 flags=-std=c++14
-
 execfile=$(bin)GI-Ray
 
 #CFLAGS= -c -Wall
