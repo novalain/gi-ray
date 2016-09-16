@@ -20,7 +20,7 @@ raytracer: $(bld)main.o
  $(bld)main.o: $(src)main.cc $(bld)camera.o $(bld)ray.o $(bld)scene.o
 	$(CC) $(include) -o $(bld)main.o -c $(src)main.cc
 
- $(bld)camera.o: $(src)camera.cc $(bld)pixel.o
+ $(bld)camera.o: $(src)camera.cc $(bld)pixel.o $(bld)scene.o
 	$(CC) $(include) -o $(bld)camera.o -c $(src)camera.cc
 
  $(bld)triangle.o: $(geo)triangle.cc

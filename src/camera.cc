@@ -1,20 +1,39 @@
 #include "camera.h"
+#include <iostream>
 
 Camera::Camera() {
-  init(glm::vec3(0,0,0), glm::vec3(0,1,0), glm::vec3(0,0,1));
 }
 
-Camera::Camera(glm::vec3 position, glm::vec3 direction, glm::vec3 up_vector) {
-  init(position, direction, up_vector);
+Camera::Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction up_vector) :
+    direction_(direction), up_vector_(up_vector) {
+  pos_idx_ = 0;
+  eye_pos_[0] = eye_pos1;
+  eye_pos_[1] = eye_pos2;
+
+  camera_plane_[0] = Vertex(0,-1,-1);
+  camera_plane_[1] = Vertex(0,1,-1);
+  camera_plane_[2] = Vertex(0,1,1);
+  camera_plane_[3] = Vertex(0,-1,1);
+
+  delta_ = (camera_plane_[1].y - camera_plane_[0].y)/WIDTH;
+  pixel_center_minimum_ = camera_plane_[0].y + delta_/2;
+  std::cout << "delta = " << delta_ << "min = " << pixel_center_minimum_ << std::endl;
 }
 
-void Camera::init(glm::vec3 position, glm::vec3 direction, glm::vec3 up_vector) {
-  position_ = position;
-  direction_ = direction;
-  up_vector_ = up_vector;
-
-  focal_length_ = 1;
-  fov_ = 90;
+void Camera::ChangeEyePos() {
+  pos_idx_ = (pos_idx_ == 0) ? 1 : 0 ;
+  // If we want more than 2 positions to switch between we could use a switch
+  // switch (pos_idx_)
+  // {
+  // case 0:
+  //   pos_idx = 1;
+  //   break;
+  // case 1:
+  //   pos_idx = 0;
+  //   break;
+  // default:
+  //   break;
+  // }
 }
 
 double Camera::CalcMaxIntensity() {
@@ -66,7 +85,7 @@ void Camera::NormalizeBySqrt(int (&image_rgb)[sx][sy][sz]) {
   }
 }
 
-void Camera::ClearColorBuffer(glm::vec3 clear_color) {
+void Camera::ClearColorBuffer(ColorDbl clear_color) {
   for(int x = 0; x < WIDTH; x++) {
     for(int y = 0; y < HEIGHT; y++) {
       framebuffer_[y][x].set_color(clear_color);
@@ -76,6 +95,21 @@ void Camera::ClearColorBuffer(glm::vec3 clear_color) {
 
 void Camera::Render() {
   // TODO: implement this
+  for(int i = 0; i < WIDTH; i++) {
+    for(int j = 0; j < HEIGHT; j++) {
+      bool collision = false;
+      Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
+      Ray ray = Ray(&eye_pos_[pos_idx_],&pixel_center);
+      for(int tri = 0; tri < scene_->get_num_of_triangles(); tri++) {
+        //TODO: uncomment this
+        collision = (*scene_).get_triangles()[tri].RayIntersection(&ray);
+        if(collision) {
+          framebuffer_[j][i].set_color(ray.get_color());
+          break;
+        }
+      }
+    }
+  }
 }
 
 void Camera::CreateImage(std::string filename, bool normalize_intensities) {
@@ -85,5 +119,6 @@ void Camera::CreateImage(std::string filename, bool normalize_intensities) {
   } else {
     NormalizeBySqrt(image_rgb);
   }
-  SaveImage("results/imgtest.png", HEIGHT, WIDTH, image_rgb);
+  filename = "results/" + filename + ".png";
+  SaveImage(filename.c_str(), HEIGHT, WIDTH, image_rgb);
 }

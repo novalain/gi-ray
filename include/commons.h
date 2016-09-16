@@ -7,6 +7,5 @@
 #define COLOR_BLUE  glm::vec3(  0,  0,255)
 
 typedef glm::vec3 Vertex;
-typedef glm::vec3 Edge;
 typedef glm::vec3 Direction;
 typedef glm::vec3 ColorDbl;
