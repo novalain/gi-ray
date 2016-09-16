@@ -3,7 +3,13 @@
 
 #include "commons.h"
 
+class Ray;
+
 class SceneObject {
+public:
+  virtual ~SceneObject() = default;
+  virtual float RayIntersection(Ray& ray) = 0;
+
 protected:
   //Vertex center_pos_; //TODO: calculate this in constructor
 };
