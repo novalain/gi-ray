@@ -5,6 +5,8 @@
 #include "triangle.h"
 #include "ray.h"
 #include "scene.h"
+#include "triangle.h"
+#include "tetrahedron.h"
 
 int main() {
   std::cout << "Hello World" << std::endl;

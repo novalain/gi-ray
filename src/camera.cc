@@ -1,6 +1,7 @@
 #include "camera.h"
 #include "ray.h"
 #include "scene.h"
+#include "scene_object.h"
 #include <iostream>
 
 Camera::Camera() {
@@ -101,9 +102,9 @@ void Camera::Render(Scene& scene) {
       bool collision = false;
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
       Ray ray = Ray(eye_pos_[pos_idx_],pixel_center);
-      for(int tri = 0; tri < scene.get_num_of_triangles(); tri++) {
-        //TODO: uncomment this
-        collision = scene.get_triangles()[tri].RayIntersection(&ray);
+      const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+      for (auto& object : objects) {
+        collision = object->RayIntersection(ray);
         if(collision) {
           framebuffer_[i][j].set_color(ray.get_color());
           break;
