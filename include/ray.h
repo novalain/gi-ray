@@ -2,23 +2,29 @@
 #define RAY_H
 
 #include "commons.h"
-#include "triangle.h"
 
 class Ray
 {
 private:
-  Vertex* v_start_;
-  Vertex* v_end_;
+  Vertex v_start_;
+  Vertex v_end_;
 
-  Triangle* intersecting_triangle_;
+  ColorDbl color_;
+
+  void* intersecting_triangle_;
 
 public:
   Ray() {}
-  Ray(Vertex* v1, Vertex* v2) : v_start_(v1), v_end_(v2) {}
+  Ray(Vertex v_start, Vertex v_end) : v_start_(v_start), v_end_(v_end) {}
 
   //TODO: implement GetTriangle() ?
-  //TODO: implement GetStartVertex() ?
-  //TODO: implement GetEndVertex() ?
+  Vertex start() { return v_start_; }
+  Vertex end() { return v_end_; }
+  ColorDbl get_color() { return color_;}
+
+  void set_color(ColorDbl color) { color_ = color; }
+  void set_intersecting_triangle(void* tri_ptr) { intersecting_triangle_ = tri_ptr; }
+
 };
 
 #endif // RAY_H

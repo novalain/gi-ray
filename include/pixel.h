@@ -2,7 +2,8 @@
 #define PIXEL_H
 
 #include <glm/glm.hpp>
-#include "ray.h"
+
+class Ray;
 
 class Pixel
 {

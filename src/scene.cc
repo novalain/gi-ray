@@ -28,8 +28,8 @@ void Scene::InitRoom() {
   int count = 0;
 
   // Colors
-  glm::vec3  color_floor   = COLOR_BLACK;
-  glm::vec3  color_ceiling = COLOR_WHITE;
+  glm::vec3  color_floor   = COLOR_WHITE;
+  glm::vec3  color_ceiling = COLOR_BLACK;
   glm::vec3  color_wall1   = COLOR_RED;
   glm::vec3  color_wall2   = COLOR_GREEN;
   glm::vec3  color_wall3   = COLOR_BLUE;
