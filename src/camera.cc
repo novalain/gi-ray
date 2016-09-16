@@ -107,7 +107,6 @@ void Camera::Render(Scene& scene) {
         if(z_current < zbuffer) {
           zbuffer = z_current;
           framebuffer_[i][j].set_color(ray.get_color());
-          break;
         }
       }
     }
