@@ -105,6 +105,7 @@ void Camera::Render(Scene& scene) {
       for(int tri = 0; tri < scene.get_num_of_triangles(); tri++) {
         float z_current = scene.get_triangles()[tri].RayIntersection(&ray);
         if(z_current < zbuffer) {
+          zbuffer = z_current;
           framebuffer_[i][j].set_color(ray.get_color());
           break;
         }
