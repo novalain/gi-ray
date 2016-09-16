@@ -95,16 +95,16 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 }
 
 void Camera::Render(Scene& scene) {
-  // TODO: implement this
   for(int i = 0; i < WIDTH; i++) {
     for(int j = 0; j < HEIGHT; j++) {
-      bool collision = false;
+      float zbuffer = FLT_MAX; //To make sure we update the zbuffer upon collision.
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
       Ray ray = Ray(eye_pos_[pos_idx_],pixel_center);
+    //TODO: should be something like: scene.get_number_of_objects()
+    // and scene.get_objects[object].RayIntersection() instead of get_triangles
       for(int tri = 0; tri < scene.get_num_of_triangles(); tri++) {
-        //TODO: uncomment this
-        collision = scene.get_triangles()[tri].RayIntersection(&ray);
-        if(collision) {
+        float z_current = scene.get_triangles()[tri].RayIntersection(&ray);
+        if(z_current < zbuffer) {
           framebuffer_[i][j].set_color(ray.get_color());
           break;
         }

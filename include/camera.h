@@ -37,6 +37,9 @@ private:
 
   Pixel framebuffer_[ WIDTH ][ HEIGHT ];
 
+  //TODO: implement a PROPER Z-buffer ;p
+  // float zbuffer_[WIDTH][HEIGHT];
+
   //TODO: aspect ratio?
   //float aspect_ratio_;
 

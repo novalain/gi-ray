@@ -33,9 +33,9 @@ void Scene::InitRoom() {
   glm::vec3  color_wall1   = COLOR_RED;
   glm::vec3  color_wall2   = COLOR_GREEN;
   glm::vec3  color_wall3   = COLOR_BLUE;
-  glm::vec3  color_wall4   = COLOR_RED;
-  glm::vec3  color_wall5   = COLOR_GREEN;
-  glm::vec3  color_wall6   = COLOR_BLUE;
+  glm::vec3  color_wall4   = COLOR_CYAN;
+  glm::vec3  color_wall5   = COLOR_MAGENTA;
+  glm::vec3  color_wall6   = COLOR_YELLOW;
   // Floor
   triangles_[count++] = Triangle(vfC, vf6, vf1, color_floor);
   triangles_[count++] = Triangle(vfC, vf1, vf2, color_floor);

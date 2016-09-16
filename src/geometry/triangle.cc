@@ -14,14 +14,14 @@ void Triangle::CalcNormal() {
   normal_ = glm::cross(v1_-v0_,v2_-v1_);
 }
 
-bool Triangle::RayIntersection(Ray* ray) {
+float Triangle::RayIntersection(Ray* ray) {
   // According to the Möller Trumbore intersection algorithm
-  Direction ps = ray->start();
-  Direction pe = ray->end();
+  Direction ps = ray->start(); // eye_position
+  Direction pe = ray->end(); // pixel centre
   Direction T = ray->start() - v0_;
   Direction E1 = v1_ - v0_;
   Direction E2 = v2_ - v0_;
-  Direction D = ray->end() - ray->start();
+  Direction D = ray->end() - ray->start(); // vector from eye to pixel
   Direction P = glm::cross(D, E2);
   Direction Q = glm::cross(T, E1);
   float t = (glm::dot(Q, E2) / glm::dot(P, E1));
@@ -33,9 +33,9 @@ bool Triangle::RayIntersection(Ray* ray) {
     ray->set_intersecting_triangle(this);
     ray->set_color(this->color_);
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
-    return true;
+    return glm::distance(intersection_point, pe); //return distance of collision point to pixel_centre
   } else {
     // std::cout << "Unsuccessful update of pixel! :'(" << std::endl; //TODO: remove when EVERYTHING is implemented
-    return false;
+    return FLT_MAX;
   }
 }
