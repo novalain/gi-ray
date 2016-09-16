@@ -20,7 +20,7 @@ raytracer: $(bld)main.o
  $(bld)main.o: $(src)main.cc $(bld)camera.o $(bld)ray.o $(bld)scene.o
 	$(CC) $(include) -o $(bld)main.o -c $(src)main.cc
 
- $(bld)camera.o: $(src)camera.cc $(bld)pixel.o $(bld)scene.o
+ $(bld)camera.o: $(src)camera.cc $(bld)pixel.o
 	$(CC) $(include) -o $(bld)camera.o -c $(src)camera.cc
 
  $(bld)triangle.o: $(geo)triangle.cc
@@ -29,7 +29,7 @@ raytracer: $(bld)main.o
  $(bld)ray.o: $(src)ray.cc
 	$(CC) $(include) -o $(bld)ray.o -c $(src)ray.cc
 
- $(bld)pixel.o: $(src)pixel.cc $(bld)ray.o
+ $(bld)pixel.o: $(src)pixel.cc
 	$(CC) $(include) -o $(bld)pixel.o -c $(src)pixel.cc
 
  $(bld)scene.o: $(src)scene.cc $(bld)triangle.o

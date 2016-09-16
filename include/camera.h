@@ -5,7 +5,6 @@
 #include <string>
 #include "commons.h"
 #include "pixel.h"
-#include "scene.h"
 
 /**
   Warning: Stack size is OS-dependent and max is 8182 kb on Ubuntu 64
@@ -18,6 +17,8 @@
 #define WIDTH 1000
 #define HEIGHT 1000
 
+class Scene;
+
 class Camera
 {
 private:
@@ -27,8 +28,6 @@ private:
   Direction direction_;
   Direction up_vector_;
 
-  Scene* scene_;
-
   float delta_;
   float pixel_center_minimum_;
   int pos_idx_; // determines which eye_pos_ we are using
@@ -36,7 +35,7 @@ private:
   // float focal_length_;
   // float fov_; // field of view
 
-  Pixel framebuffer_[ HEIGHT ][ WIDTH ];
+  Pixel framebuffer_[ WIDTH ][ HEIGHT ];
 
   //TODO: aspect ratio?
   //float aspect_ratio_;
@@ -59,12 +58,12 @@ private:
                         int (&image)[sx][sy][sz]) {
     FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
     (void)fprintf(fp, "P6\n%d %d\n255\n", img_width, img_height);
-    for (int i = 0; i < img_width; i++ ) {
-      for (int j = 0; j < img_height; j++) {
+    for (int i = img_width-1; i >= 0; i-- ) {
+      for (int j = img_height-1; j >= 0; j--) {
         static unsigned char color[3];
-        color[0] = image[i][j][0]; // red
-        color[1] = image[i][j][1]; // green
-        color[2] = image[i][j][2]; // blue
+        color[0] = image[j][i][0]; // red
+        color[1] = image[j][i][1]; // green
+        color[2] = image[j][i][2]; // blue
         (void)fwrite(color, 1, 3, fp);
       }
     }
@@ -87,10 +86,9 @@ public:
   // void set_direction(glm::vec3 dir) { direction_ = dir; }
   // void set_up_vector(glm::vec3 up_vec) { up_vector_ = up_vec; }
   void ChangeEyePos();
-  void Render();
+  void Render(Scene& scene);
   void ClearColorBuffer(ColorDbl clear_color);
   void CreateImage(std::string filename, bool normalize_intensities);
-  void AssignCameraToScene(Scene* scene) { scene_ = scene; }
 };
 
 #endif // CAMERA_H
