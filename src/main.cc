@@ -15,13 +15,6 @@ int main() {
   cam.ClearColorBuffer(glm::vec3(155,45,90));
   // cam.CreateImage("testImg",true);
 
-  Triangle t0 = Triangle(Vertex(2, 3, 4), Vertex(2, 3, 5), Vertex(1, 2, 3));
-  Triangle t1 = Triangle(Vertex(2, 3, 4), Vertex(2, 3, 5), Vertex(1, 2, 3));
-  Triangle t2 = Triangle(Vertex(2, 3, 4), Vertex(2, 3, 5), Vertex(1, 2, 3));
-  Triangle t3 = Triangle(Vertex(2, 3, 4), Vertex(2, 3, 5), Vertex(1, 2, 3));
-
-  Tetrahedron t = Tetrahedron(t0,t1,t2,t3);
-
   cam.Render(scene);
   cam.CreateImage("max_intensity_ep1",true);
   cam.CreateImage("sqrt_intensity_ep1",false);

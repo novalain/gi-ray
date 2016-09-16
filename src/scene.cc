@@ -4,8 +4,23 @@
 #include "tetrahedron.h"
 
 Scene::Scene() {
+  InitObjects();
   InitRoom();
-  //InitObjects();
+}
+
+void Scene::InitObjects() {
+  // Bottom
+  Triangle t0 = Triangle(Vertex(0, 6, -5), Vertex(5, -6, -5), Vertex(10, 6, -5),
+                         COLOR_PINK);
+  // Sides
+  Triangle t1 = Triangle(Vertex(5, -6, -5), Vertex(0, 6, -5), Vertex(0, 0, 0),
+                         COLOR_PINK);
+  Triangle t2 = Triangle(Vertex(10, 6, -5), Vertex(5, -6, -5), Vertex(0, 0, 0),
+                         COLOR_PINK);
+  Triangle t3 = Triangle(Vertex(0, 6, -5), Vertex(10, 6, -5), Vertex(0, 0, 0),
+                         COLOR_PINK);
+
+  scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
 }
 
 void Scene::InitRoom() {
