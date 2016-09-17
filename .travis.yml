@@ -10,4 +10,4 @@ before_install:
 # Build steps
 script:
   - mkdir build
-  - make clang
+  - make travistests
