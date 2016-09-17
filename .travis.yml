@@ -20,8 +20,8 @@ compiler:
   - gcc
   - clang
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-  #- if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.7 -std=c++14" CC="clang-3.7"; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5 -std=c++14" CC="gcc-5"; fi
+  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.4 -std=c++14" CC="clang-3.4"; fi
 addons:
   apt:
     sources:
@@ -30,7 +30,7 @@ addons:
     packages:
     - gcc-5
     - g++-5
-    #- clang-3.7
+    - clang-3.4
     - libglm-dev
 script:
   - mkdir build
