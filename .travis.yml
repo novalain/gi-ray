@@ -29,7 +29,7 @@ addons:
     packages:
     - gcc-5
     - g++-5
-    - clang
+    - clang-3.7
     - libglm-dev
 script:
   - mkdir build
