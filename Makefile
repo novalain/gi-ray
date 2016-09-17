@@ -1,4 +1,5 @@
 CC=g++ -std=c++14
+clang=clang++
 src=./src/
 include=-I./include/
 geo=./src/geometry/
@@ -10,6 +11,9 @@ execfile=$(bin)GI-Ray
 #WARNINGS = -Wall
 
 all: raytracer #allinone
+
+clang:
+	$(clang) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include)
 
 allinone:
 	$(CC) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
