@@ -12,7 +12,7 @@ execfile=$(bin)GI-Ray
 all: raytracer #allinone
 
 travistests:
-	$(CXX) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(include)
+	$(COMPILER) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(include)
 
 allinone:
 	$(CC) $(src)main.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
