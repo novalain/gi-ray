@@ -5,8 +5,8 @@ compiler:
   - clang
   - gcc
 before_install:
-  -sudo apt-get -qq update
-  -sudo apt-get install libglm-dev
+  - sudo apt-get -qq update
+  - sudo apt-get install libglm-dev
 # Build steps
 script:
   - mkdir build
