@@ -1,13 +1,35 @@
 # Enable C++ support
-language: cpp
+#language: cpp
 # Compiler selection
-compiler:
-  - clang
-  - gcc
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install libglm-dev
+#compiler:
+#  - clang
+#  - gcc
+#before_install:
+#  - sudo apt-get -qq update
+#  - sudo apt-get install libglm-dev
 # Build steps
+#script:
+#  - mkdir build
+#  - make travistests
+
+sudo: false
+# Enable C++
+language: cpp
+# Which compilers to test agains
+compiler:
+  - gcc
+  - clang
+install:
+- if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-5
+    - g++-5
+    - clang
+    - libglm-dev
 script:
   - mkdir build
   - make travistests
