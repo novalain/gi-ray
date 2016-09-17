@@ -21,16 +21,16 @@ compiler:
   - clang
 install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5 -std=c++14" CC="gcc-5"; fi
-  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.7 -std=c++14" CC="clang-3.7"; fi
+  #- if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.7 -std=c++14" CC="clang-3.7"; fi
 addons:
   apt:
     sources:
-    - llvm-toolchain-precise
+    #- llvm-toolchain-precise
     - ubuntu-toolchain-r-test
     packages:
     - gcc-5
     - g++-5
-    - clang-3.7
+    #- clang-3.7
     - libglm-dev
 script:
   - mkdir build
