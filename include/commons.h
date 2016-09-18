@@ -8,6 +8,7 @@
 #define COLOR_CYAN    glm::vec3(  0,255,255)
 #define COLOR_MAGENTA glm::vec3(255,  0,255)
 #define COLOR_YELLOW  glm::vec3(255,255,  0)
+#define COLOR_PINK    glm::vec3(235, 16,255)
 
 typedef glm::vec3 Vertex;
 typedef glm::vec3 Direction;
