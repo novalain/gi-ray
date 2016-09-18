@@ -52,19 +52,7 @@ private:
   void NormalizeByMaxIntensity(ImageRgb& image_rgb);
   void NormalizeBySqrt(ImageRgb& image_rgb);
 
-  static void SaveImage(const char* img_name, ImageRgb& image) {
-    FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
-    (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
-    for (int i = WIDTH - 1; i >= 0; i--) {
-      for (int j = HEIGHT - 1; j >= 0; j--) {
-        static unsigned char color[3];
-        color[0] = image[j][i][0];  // red
-        color[1] = image[j][i][1];  // green
-        color[2] = image[j][i][2];  // blue
-        (void)fwrite(color, 1, 3, fp);
-      }
-    }
-  }
+  static void SaveImage(const char* img_name, ImageRgb& image);
 
  public:
   Camera();
