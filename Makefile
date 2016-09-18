@@ -13,7 +13,7 @@ execfile=$(bin)GI-Ray
 all: raytracer #allinone
 
 travistests:
-	$(CXX) $(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
+	$(CXX) $(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(include) #-Wall
 
 allinone:
 	$(CC) $(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
