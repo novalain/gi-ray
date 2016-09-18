@@ -8,7 +8,7 @@ Camera::Camera() {
 }
 
 Camera::Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction up_vector) :
-    direction_(direction), up_vector_(up_vector) {
+    direction_(direction), up_vector_(up_vector), framebuffer_(WIDTH, std::vector<Pixel>(HEIGHT)) {
   pos_idx_ = 0;
   eye_pos_[0] = eye_pos1;
   eye_pos_[1] = eye_pos2;
@@ -54,8 +54,7 @@ double Camera::CalcMaxIntensity() {
   return max_intensity;
 }
 
-template <std::size_t sx, std::size_t sy, std::size_t sz>
-void Camera::NormalizeByMaxIntensity(int (&image_rgb)[sx][sy][sz]) {
+void Camera::NormalizeByMaxIntensity(ImageRgb& image_rgb) {
   double max_intensity = CalcMaxIntensity();
   double normalizing_factor = 255.99/max_intensity;
 
@@ -72,8 +71,7 @@ void Camera::NormalizeByMaxIntensity(int (&image_rgb)[sx][sy][sz]) {
   }
 }
 
-template <std::size_t sx, std::size_t sy, std::size_t sz>
-void Camera::NormalizeBySqrt(int (&image_rgb)[sx][sy][sz]) {
+void Camera::NormalizeBySqrt(ImageRgb& image_rgb) {
   for(int x = 0; x < WIDTH; x++) {
     for(int y = 0; y < HEIGHT; y++) {
       int r = (int) sqrt(framebuffer_[x][y].get_color().x);
@@ -113,13 +111,29 @@ void Camera::Render(Scene& scene) {
   }
 }
 
-void Camera::CreateImage(std::string filename, bool normalize_intensities) {
-  int image_rgb[ WIDTH ][ HEIGHT ][ 3 ];
-  if(normalize_intensities) {
+void Camera::CreateImage(std::string filename, const bool& normalize_intensities) {
+  //int image_rgb[ WIDTH ][ HEIGHT ][ 3 ];
+  ImageRgb image_rgb (WIDTH,std::vector<std::vector<int>>(HEIGHT,std::vector<int>(3)));
+  if (normalize_intensities) {
     NormalizeByMaxIntensity(image_rgb);
   } else {
     NormalizeBySqrt(image_rgb);
   }
   filename = "results/" + filename + ".ppm";
-  SaveImage(filename.c_str(), WIDTH, HEIGHT, image_rgb);
+  SaveImage(filename.c_str(), image_rgb);
 }
+
+void Camera::SaveImage(const char* img_name,
+                        ImageRgb& image) {
+    FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
+    (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
+    for (int i = WIDTH-1; i >= 0; i-- ) {
+      for (int j = HEIGHT-1; j >= 0; j--) {
+        static unsigned char color[3];
+        color[0] = image[j][i][0]; // red
+        color[1] = image[j][i][1]; // green
+        color[2] = image[j][i][2]; // blue
+        (void)fwrite(color, 1, 3, fp);
+      }
+    }
+  }

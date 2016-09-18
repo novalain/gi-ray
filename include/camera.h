@@ -6,6 +6,7 @@
 #include <string>
 #include "commons.h"
 #include "pixel.h"
+#include <vector>
 
 /**
   Warning: Stack size is OS-dependent and max is 8182 kb on Ubuntu 64
@@ -15,8 +16,11 @@
   TODO: We might want to declare this array on the heap
   (no restrictions on size except when RAM is filled up)
 */
-#define WIDTH 300
-#define HEIGHT 300
+#define WIDTH 1000
+#define HEIGHT 1000
+
+typedef std::vector<std::vector<std::vector<int>>> ImageRgb;
+typedef std::vector<std::vector<Pixel>> Framebuffer;
 
 class Scene;
 
@@ -35,8 +39,7 @@ private:
 
   // float focal_length_;
   // float fov_; // field of view
-
-  Pixel framebuffer_[ WIDTH ][ HEIGHT ];
+  Framebuffer framebuffer_;
 
   //TODO: implement a PROPER Z-buffer ;p
   // float zbuffer_[WIDTH][HEIGHT];
@@ -46,33 +49,12 @@ private:
 
   // void init(glm::vec3 position, glm::vec3 direction, glm::vec3 up_vector);
   double CalcMaxIntensity();
+  void NormalizeByMaxIntensity(ImageRgb& image_rgb);
+  void NormalizeBySqrt(ImageRgb& image_rgb);
 
-  //TODO: cleanup
-  template <std::size_t sx, std::size_t sy, std::size_t sz>
-  void NormalizeByMaxIntensity(int (&image_rgb)[sx][sy][sz]);
+  static void SaveImage(const char* img_name, ImageRgb& image);
 
-  //TODO: cleanup
-  template <std::size_t sx, std::size_t sy, std::size_t sz>
-  void NormalizeBySqrt(int (&image_rgb)[sx][sy][sz]);
-
-  // TODO: CLEAN THIS UP.. just copied from file_utils.h
-  template <std::size_t sx, std::size_t sy, std::size_t sz>
-  static void SaveImage(const char* img_name,
-                        int img_width, int img_height,
-                        int (&image)[sx][sy][sz]) {
-    FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
-    (void)fprintf(fp, "P6\n%d %d\n255\n", img_width, img_height);
-    for (int i = img_width-1; i >= 0; i-- ) {
-      for (int j = img_height-1; j >= 0; j--) {
-        static unsigned char color[3];
-        color[0] = image[j][i][0]; // red
-        color[1] = image[j][i][1]; // green
-        color[2] = image[j][i][2]; // blue
-        (void)fwrite(color, 1, 3, fp);
-      }
-    }
-  }
-public:
+ public:
   Camera();
   Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction up_vector);
 
@@ -92,7 +74,7 @@ public:
   void ChangeEyePos();
   void Render(Scene& scene);
   void ClearColorBuffer(ColorDbl clear_color);
-  void CreateImage(std::string filename, bool normalize_intensities);
+  void CreateImage(std::string filename, const bool& normalize_intensities);
 };
 
 #endif // CAMERA_H
