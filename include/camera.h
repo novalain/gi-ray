@@ -15,8 +15,8 @@
   TODO: We might want to declare this array on the heap
   (no restrictions on size except when RAM is filled up)
 */
-#define WIDTH 1000
-#define HEIGHT 1000
+#define WIDTH 300
+#define HEIGHT 300
 
 class Scene;
 
