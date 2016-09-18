@@ -1,6 +1,7 @@
 #include "camera.h"
 #include "ray.h"
 #include "scene.h"
+#include "scene_object.h"
 #include <iostream>
 
 Camera::Camera() {
@@ -97,15 +98,14 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 void Camera::Render(Scene& scene) {
   for(int i = 0; i < WIDTH; i++) {
     for(int j = 0; j < HEIGHT; j++) {
-      float zbuffer = FLT_MAX; //To make sure we update the zbuffer upon collision.
+      float z_buffer = FLT_MAX; //To make sure we update the z_buffer upon collision.
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
       Ray ray = Ray(eye_pos_[pos_idx_],pixel_center);
-    //TODO: should be something like: scene.get_number_of_objects()
-    // and scene.get_objects[object].RayIntersection() instead of get_triangles
-      for(int tri = 0; tri < scene.get_num_of_triangles(); tri++) {
-        float z_current = scene.get_triangles()[tri].RayIntersection(&ray);
-        if(z_current < zbuffer) {
-          zbuffer = z_current;
+      const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+      for (auto& object : objects) {
+        float z_current = object->RayIntersection(ray);
+        if(z_current < z_buffer) {
+          z_buffer = z_current;
           framebuffer_[i][j].set_color(ray.get_color());
         }
       }
@@ -120,6 +120,6 @@ void Camera::CreateImage(std::string filename, bool normalize_intensities) {
   } else {
     NormalizeBySqrt(image_rgb);
   }
-  filename = "results/" + filename + ".png";
+  filename = "results/" + filename + ".ppm";
   SaveImage(filename.c_str(), WIDTH, HEIGHT, image_rgb);
 }
