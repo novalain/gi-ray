@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include <glm/glm.hpp>
+#include <stdio.h>
 #include <string>
 #include "commons.h"
 #include "pixel.h"
