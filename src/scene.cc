@@ -9,18 +9,19 @@ Scene::Scene() {
 }
 
 void Scene::InitObjects() {
+  Vertex v0 = Vertex( 8,  6, -2);
+  Vertex v1 = Vertex( 9,  3, -2);
+  Vertex v2 = Vertex(10,  6, -2);
+  Vertex v3 = Vertex( 9,  4.5f,  1);
   // Bottom
-  Triangle t0 = Triangle(Vertex(0, 6, -5), Vertex(5, -6, -5), Vertex(10, 6, -5),
-                         COLOR_PINK);
+  Triangle t0 = Triangle(v0, v2, v1, COLOR_PINK);
   // Sides
-  Triangle t1 = Triangle(Vertex(5, -6, -5), Vertex(0, 6, -5), Vertex(0, 0, 0),
-                         COLOR_PINK);
-  Triangle t2 = Triangle(Vertex(10, 6, -5), Vertex(5, -6, -5), Vertex(0, 0, 0),
-                         COLOR_PINK);
-  Triangle t3 = Triangle(Vertex(0, 6, -5), Vertex(10, 6, -5), Vertex(0, 0, 0),
-                         COLOR_PINK);
+  Triangle t1 = Triangle(v0, v1, v3, COLOR_MAGENTA); // "front"
+  Triangle t2 = Triangle(v1, v2, v3, COLOR_YELLOW); // "back"
+  Triangle t3 = Triangle(v0, v3, v2, ColorDbl(100,100,100)); // "left side"
 
   scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
+  scene_objects_.push_back(std::make_unique<Tetrahedron>(2.5f, 3.f, Vertex(8,-2,-2)));
 }
 
 void Scene::InitRoom() {
@@ -82,19 +83,19 @@ void Scene::InitRoom() {
 
   // Wall 3
   triangle_list.push_back(Triangle(vf4, vc4, vf5, color_wall3));
-  triangle_list.push_back(Triangle(vc4, vc5, vf5, color_wall3));
+  triangle_list.push_back(Triangle(vf5, vc4, vc5, color_wall3));
 
   // Wall 4
-  triangle_list.push_back(Triangle(vc5, vf6, vf5, color_wall4));
-  triangle_list.push_back(Triangle(vc5, vc6, vf6, color_wall4));
+  triangle_list.push_back(Triangle(vf5, vc5, vf6, color_wall4));
+  triangle_list.push_back(Triangle(vf6, vc5, vc6, color_wall4));
 
   // Wall 5
-  triangle_list.push_back(Triangle(vc6, vc1, vf6, color_wall5));
-  triangle_list.push_back(Triangle(vc1, vf1, vf6, color_wall5));
+  triangle_list.push_back(Triangle(vf6, vc6, vf1, color_wall5));
+  triangle_list.push_back(Triangle(vf1, vc6, vc1, color_wall5));
 
   // Wall 6
-  triangle_list.push_back(Triangle(vf2, vf1, vc2, color_wall6));
-  triangle_list.push_back(Triangle(vf1, vc1, vc2, color_wall6));
+  triangle_list.push_back(Triangle(vf1, vc1, vf2, color_wall6));
+  triangle_list.push_back(Triangle(vf2, vc1, vc2, color_wall6));
 
   scene_objects_.push_back(
       std::make_unique<TriangleCustomShape>(triangle_list));
