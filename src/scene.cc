@@ -2,10 +2,12 @@
 #include "commons.h"
 #include "triangle_custom_shape.h"
 #include "tetrahedron.h"
+#include "point_light.h"
 
 Scene::Scene() {
   InitObjects();
   InitRoom();
+  InitLights();
 }
 
 void Scene::InitObjects() {
@@ -98,4 +100,8 @@ void Scene::InitRoom() {
 
   scene_objects_.push_back(
       std::make_unique<TriangleCustomShape>(triangle_list));
+}
+
+void Scene::InitLights() {
+    scene_objects_.push_back(std::make_unique<PointLight>(Vertex(1,5,3), 50.f));
 }

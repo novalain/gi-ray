@@ -13,6 +13,7 @@ private:
 
   void InitRoom();
   void InitObjects();
+  void InitLights();
 public:
   Scene();
 
