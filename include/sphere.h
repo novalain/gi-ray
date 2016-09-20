@@ -6,6 +6,7 @@
 class Sphere : public SceneObject {
 private:
   float radius_;
+  ColorDbl color_;
 
 public:
   Sphere(Vertex position, float radius, ColorDbl color);
