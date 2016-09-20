@@ -15,8 +15,6 @@ int main() {
   Camera cam = Camera(Vertex(-2,0,0), Vertex(-1,0,0), Direction(1,0,0), Direction(0,0,1));
   cam.ClearColorBuffer(glm::vec3(155,45,90));
 
-  Sphere s = Sphere(Vertex(0,0,0), 5.f, ColorDbl(.3f, .4f, 0.8f));
-
   cam.Render(scene);
   cam.CreateImage("max_intensity_ep1",true);
   cam.CreateImage("sqrt_intensity_ep1",false);

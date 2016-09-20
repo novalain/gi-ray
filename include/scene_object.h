@@ -11,7 +11,9 @@ public:
   virtual bool RayIntersection(Ray& ray, float& z) = 0;
 
 protected:
-  //Vertex center_pos_; //TODO: calculate this in constructor
+  SceneObject(Vertex position) { position_ = position; }
+  SceneObject() = default;
+  Vertex position_;
 };
 
 #endif // SCENE_OBJECT_H
