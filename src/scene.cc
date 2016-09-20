@@ -2,6 +2,7 @@
 #include "commons.h"
 #include "triangle_custom_shape.h"
 #include "tetrahedron.h"
+#include "sphere.h"
 
 Scene::Scene() {
   InitObjects();
@@ -22,6 +23,8 @@ void Scene::InitObjects() {
 
   scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
   scene_objects_.push_back(std::make_unique<Tetrahedron>(2.5f, 3.f, Vertex(8,-2,-2)));
+  scene_objects_.push_back(
+      std::make_unique<Sphere>(Vertex(8.f, 0.5f, 0), 1.5f, COLOR_CYAN));
 }
 
 void Scene::InitRoom() {

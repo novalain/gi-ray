@@ -13,15 +13,15 @@ execfile=$(bin)GI-Ray
 all: raytracer #allinone
 
 travistests:
-	$(CXX) $(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(include) #-Wall
+	$(CXX) $(flags) $(src)main.cc $(geo)sphere.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(include) #-Wall
 
 allinone:
-	$(CC) $(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
+	$(CC) $(flags) $(src)main.cc $(geo)sphere.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
 
 raytracer: $(bld)main.o
-	$(CC) $(flags) $(bld)tetrahedron.o $(bld)triangle_custom_shape.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
+	$(CC) $(flags) $(bld)sphere.o $(bld)tetrahedron.o $(bld)triangle_custom_shape.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
 
-$(bld)main.o: $(src)main.cc $(bld)camera.o $(bld)ray.o $(bld)scene.o $(bld)tetrahedron.o $(bld)triangle_custom_shape.o
+$(bld)main.o: $(src)main.cc $(bld)sphere.o $(bld)camera.o $(bld)ray.o $(bld)scene.o $(bld)tetrahedron.o $(bld)triangle_custom_shape.o
 	$(CC) $(flags) $(include) -o $(bld)main.o -c $(src)main.cc
 
 $(bld)camera.o: $(src)camera.cc $(bld)pixel.o
@@ -44,6 +44,9 @@ $(bld)tetrahedron.o: $(geo)tetrahedron.cc $(bld)triangle.o
 
 $(bld)triangle_custom_shape.o: $(geo)triangle_custom_shape.cc $(bld)triangle.o
 	$(CC) $(flags) $(include) -o $(bld)triangle_custom_shape.o -c $(geo)triangle_custom_shape.cc
+
+$(bld)sphere.o: $(geo)sphere.cc
+	$(CC) $(flags) $(include) -o $(bld)sphere.o -c $(geo)sphere.cc
 
 run:
 	$(execfile)
