@@ -21,7 +21,9 @@ public:
   glm::vec3 get_normal() { return normal_; }
   glm::vec3 get_color() { return color_; }
 
-  float RayIntersection(Ray& ray);
+  bool RayIntersection(Ray& ray, float& z);
+
+  void Print() const;
 };
 
 #endif // TRIANGLE_H

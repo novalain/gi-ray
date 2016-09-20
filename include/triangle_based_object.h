@@ -11,15 +11,15 @@ protected:
 public:
   // TODO: Move to .cc file?
   // This needs to make more sense with the z-buffer.. temp solution
-  virtual float RayIntersection(Ray& ray) {
-    float z_buffer = FLT_MAX;
+  virtual bool RayIntersection(Ray& ray, float& z) {
+    bool update_pixel_color = false;
     for (int i = 0; i < triangles_.size(); i++) {
-      float z_current = triangles_[i].RayIntersection(ray);
-      if (z_current < z_buffer) {
-        z_buffer = z_current;
+      bool is_collision_closer_to_cam = triangles_[i].RayIntersection(ray, z);
+      if (is_collision_closer_to_cam) {
+        update_pixel_color = true;
       }
     }
-    return z_buffer;
+    return update_pixel_color;
   }
 };
 
