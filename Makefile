@@ -6,6 +6,7 @@ bin=./bin/
 bld=./build/
 flags=-std=c++14
 execfile=$(bin)GI-Ray
+compall=$(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(src)point_light.cc $(include)
 
 #CFLAGS= -c -Wall
 #WARNINGS = -Wall
@@ -13,10 +14,10 @@ execfile=$(bin)GI-Ray
 all: raytracer #allinone
 
 travistests:
-	$(CXX) $(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(include) #-Wall
+	$(CXX) $(compall) #-Wall
 
 allinone:
-	$(CC) $(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc -o $(execfile) $(include) #-Wall
+	$(CC) $(compall) -o $(execfile) #-Wall
 
 raytracer: $(bld)main.o
 	$(CC) $(flags) $(bld)point_light.o $(bld)tetrahedron.o $(bld)triangle_custom_shape.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
