@@ -4,8 +4,6 @@
 #include "camera.h"
 #include "ray.h"
 #include "scene.h"
-#include "tetrahedron.h"
-#include "sphere.h"
 #include <ctime>
 
 int main() {

@@ -6,5 +6,5 @@ Sphere::Sphere(Vertex position, float radius, ColorDbl color)
     : SceneObject(position), radius_(radius), color_(color) {}
 
 bool Sphere::RayIntersection(Ray& ray, float& z) {
-  return true;
+  return false;
 }
