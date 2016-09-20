@@ -6,7 +6,7 @@ bin=./bin/
 bld=./build/
 flags=-std=c++14
 execfile=$(bin)GI-Ray
-compall=$(flags) $(src)main.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(src)point_light.cc $(include)
+compall=$(flags) $(src)main.cc $(geo)sphere.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(src)point_light.cc $(include)
 
 #CFLAGS= -c -Wall
 #WARNINGS = -Wall
