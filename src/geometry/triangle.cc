@@ -1,5 +1,5 @@
 #include "triangle.h"
-#include <iostream> //TODO: remove when EVERYTHING is implemented
+#include <iostream>
 
 Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2) : v0_(v0), v1_(v1), v2_(v2) {
   color_ = COLOR_WHITE;
@@ -14,13 +14,13 @@ void Triangle::CalcNormal() {
   normal_ = glm::cross(v1_-v0_,v2_-v1_);
 }
 
-float Triangle::RayIntersection(Ray& ray) {
+bool Triangle::RayIntersection(Ray& ray, float& z) {
   Direction D = ray.end() - ray.start(); // vector from eye to pixel
   // Simple check if the triangle is facing the camera
   // If non-negative it is facing away from the camera, i.e. not visible from camera
-  if( glm::dot(normal_,glm::normalize(D)) >= 0) {
-    return FLT_MAX;
-  }
+    //if ( glm::dot(normal_,glm::normalize(D)) >= 0) {
+    //  return FLT_MAX;
+    //}
 
   // According to the Möller Trumbore intersection algorithm
   Direction ps = ray.start(); // eye_position
@@ -34,14 +34,21 @@ float Triangle::RayIntersection(Ray& ray) {
   float u = (glm::dot(P, T) / glm::dot(P, E1));
   float v = (glm::dot(Q, D) / glm::dot(P, E1));
 
-  if(u >= 0 && v >= 0 && u+v <= 1) { //if collision with triangle
+  if(u >= 0 && v >= 0 && u+v <= 1 && t > 1 && t < z) { //if collision with a triangle closer to cam than before
     Vertex intersection_point = (1-u-v)*v0_ + u*v1_ + v*v2_;
     ray.set_intersecting_triangle(this);
     ray.set_color(this->color_);
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
-    return glm::distance(intersection_point, pe); //return distance of collision point to pixel_centre
+    z = t;
+    return true;
   } else {
     // std::cout << "Unsuccessful update of pixel! :'(" << std::endl; //TODO: remove when EVERYTHING is implemented
-    return FLT_MAX;
+    return false;
   }
+}
+
+void Triangle::Print() const {
+  std::cout << "v0 = (" << v0_.x << ", " << v0_.y << ", " << v0_.z << ",\n"
+            << "v1 = (" << v1_.x << ", " << v1_.y << ", " << v1_.z << ",\n"
+            << "v2 = (" << v2_.x << ", " << v2_.y << ", " << v2_.z << ",\n" << std::endl;
 }

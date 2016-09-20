@@ -8,7 +8,7 @@ class Ray;
 class SceneObject {
 public:
   virtual ~SceneObject() = default;
-  virtual float RayIntersection(Ray& ray) = 0;
+  virtual bool RayIntersection(Ray& ray, float& z) = 0;
 
 protected:
   //Vertex center_pos_; //TODO: calculate this in constructor
