@@ -3,6 +3,7 @@
 #include "commons.h"
 #include "camera.h"
 #include "scene.h"
+#include "material.h"
 #include <ctime>
 
 int main() {
@@ -15,6 +16,8 @@ int main() {
   //cam.Render(scene);
   //cam.CreateImage("max_intensity_ep1",true);
   //cam.CreateImage("sqrt_intensity_ep1",false);
+
+  Material m = Material(0.5f, 0.5f, 0.5f, COLOR_GREEN);
 
   cam.ChangeEyePos();
 
