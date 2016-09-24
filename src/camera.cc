@@ -107,14 +107,18 @@ void Camera::Render(Scene& scene) {
 ColorDbl Camera::Raytrace(Ray& ray, Scene& scene) {
   //To make sure we update the z_buffer upon collision.
   float z_buffer = FLT_MAX;
+ // IntersectionPoint p;
+  ColorDbl c;
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
   for (auto& object : objects) {
     // z_buffer is passed as reference and gets updated
     bool update_pixel_color = object->RayIntersection(ray, z_buffer);
+    //bool collision = object->RayIntersection(ray, z_buffer);
     if (update_pixel_color) {
-      return ray.get_color();
+      c = ray.get_color();
     }
   }
+  return c;
 }
 
 void Camera::CreateImage(std::string filename, const bool& normalize_intensities) {

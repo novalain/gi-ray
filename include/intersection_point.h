@@ -10,6 +10,7 @@ private:
   Direction normal_;
   Material material_;
 public:
+	IntersectionPoint();
   IntersectionPoint(Vertex position, Direction normal, Material material_);
 
   Vertex get_position() { return position_; }
