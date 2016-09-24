@@ -75,6 +75,7 @@ private:
   void Render(Scene& scene);
   void ClearColorBuffer(ColorDbl clear_color);
   void CreateImage(std::string filename, const bool& normalize_intensities);
+  ColorDbl Raytrace(Ray& ray, Scene& scene);
 };
 
 #endif // CAMERA_H

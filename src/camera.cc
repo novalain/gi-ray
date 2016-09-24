@@ -96,16 +96,23 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 void Camera::Render(Scene& scene) {
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
-      float z_buffer = FLT_MAX; //To make sure we update the z_buffer upon collision.
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
       Ray ray = Ray(eye_pos_[pos_idx_],pixel_center);
-      const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
-      for (auto& object : objects) {
-        bool update_pixel_color = object->RayIntersection(ray, z_buffer); // z_buffer is passed as reference and gets updated
-        if (update_pixel_color) {
-          framebuffer_[i][j].set_color(ray.get_color());
-        }
-      }
+      ColorDbl out_color = Raytrace(ray, scene);
+      framebuffer_[i][j].set_color(out_color);
+    }
+  }
+}
+
+ColorDbl Camera::Raytrace(Ray& ray, Scene& scene) {
+  //To make sure we update the z_buffer upon collision.
+  float z_buffer = FLT_MAX;
+  const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+  for (auto& object : objects) {
+    // z_buffer is passed as reference and gets updated
+    bool update_pixel_color = object->RayIntersection(ray, z_buffer);
+    if (update_pixel_color) {
+      return ray.get_color();
     }
   }
 }
