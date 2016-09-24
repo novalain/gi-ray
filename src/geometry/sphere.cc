@@ -23,7 +23,10 @@ bool Sphere::RayIntersection(Ray& ray, float& z) {
   if (sqrt_term < 0) {
     return false;
   }
-  ray.set_color(color_);
+
+  Direction unit_normal = glm::normalize(ray.end() - this->position_);
+  Vertex intersection_point = this->position_ + unit_normal * radius_;
+  ray.set_intersection_point(new IntersectionPoint(intersection_point, unit_normal, Material(0.f, 0.f, 0.f, this->color_)));
   z = fmin(-b/2 + sqrt(sqrt_term), -b/2 - sqrt(sqrt_term));
   return true;
 }

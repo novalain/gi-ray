@@ -2,6 +2,7 @@
 #include "ray.h"
 #include "scene.h"
 #include "scene_object.h"
+#include "point_light.h"
 #include <iostream>
 
 Camera::Camera() {
@@ -96,18 +97,53 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 void Camera::Render(Scene& scene) {
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
-      float z_buffer = FLT_MAX; //To make sure we update the z_buffer upon collision.
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
       Ray ray = Ray(eye_pos_[pos_idx_],pixel_center);
-      const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
-      for (auto& object : objects) {
-        bool update_pixel_color = object->RayIntersection(ray, z_buffer); // z_buffer is passed as reference and gets updated
-        if (update_pixel_color) {
-          framebuffer_[i][j].set_color(ray.get_color());
-        }
-      }
+      ColorDbl out_color = Raytrace(ray, scene);
+      framebuffer_[i][j].set_color(out_color);
     }
   }
+}
+
+ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p) {
+  // TODO: loop through lights in scene and remove hardcode
+  PointLight pl = PointLight(Vertex(0, 2, -2), 0.01f, COLOR_WHITE);
+  Direction light_direction = pl.get_position() - p.get_position();
+
+  float intensity = pl.get_intensity();
+  ColorDbl light_color = pl.get_color();
+  Direction L = glm::normalize(pl.get_position() - p.get_position());
+  Direction N = glm::normalize(p.get_normal());
+
+  ColorDbl result = glm::dot(L, N) * light_color * intensity * p.get_material().get_color();
+
+  // TODO: Check reflective and transmissive materials, call Raytrace() recursively,
+  // Compute shadow rays etc.
+
+}
+
+IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& scene) {
+  //To make sure we update the z_buffer upon collision.
+  float z_buffer = FLT_MAX;
+  const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+  for (auto& object : objects) {
+    // z_buffer is passed as reference and gets updated
+    // TODO: Make void OR make rayintersection return intersection point instead of keeping it in the ray instance
+    bool update_pixel_color = object->RayIntersection(ray, z_buffer);
+    //bool collision = object->RayIntersection(ray, z_buffer);
+    //if (update_pixel_color) {
+    //  c = ray.get_color();
+    //}
+  }
+  return ray.get_intersection_point();
+}
+
+ColorDbl Camera::Raytrace(Ray& ray, Scene& scene) {
+  IntersectionPoint* intersection_point = GetClosestIntersectionPointInScene(ray, scene);
+  if (intersection_point) {
+    return Shade(ray, *intersection_point);
+  }
+  return COLOR_BLACK;
 }
 
 void Camera::CreateImage(std::string filename, const bool& normalize_intensities) {

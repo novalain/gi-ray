@@ -1,4 +1,5 @@
 #include "triangle.h"
+#include "intersection_point.h"
 #include <iostream>
 
 Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2) : v0_(v0), v1_(v1), v2_(v2) {
@@ -35,9 +36,8 @@ bool Triangle::RayIntersection(Ray& ray, float& z) {
   float v = (glm::dot(Q, D) / glm::dot(P, E1));
 
   if(u >= 0 && v >= 0 && u+v <= 1 && t > 1 && t < z) { //if collision with a triangle closer to cam than before
-    Vertex intersection_point = (1-u-v)*v0_ + u*v1_ + v*v2_;
-    ray.set_intersecting_triangle(this);
-    ray.set_color(this->color_);
+    Vertex intersection_vertex = (1-u-v)*v0_ + u*v1_ + v*v2_;
+    ray.set_intersection_point(new IntersectionPoint(intersection_vertex, this->normal_, Material(0.f, 0.f, 0.f, this->color_)));
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
     z = t;
     return true;
