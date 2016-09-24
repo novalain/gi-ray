@@ -35,8 +35,8 @@ bool Triangle::RayIntersection(Ray& ray, float& z) {
   float v = (glm::dot(Q, D) / glm::dot(P, E1));
 
   if(u >= 0 && v >= 0 && u+v <= 1 && t > 1 && t < z) { //if collision with a triangle closer to cam than before
-    Vertex intersection_point = (1-u-v)*v0_ + u*v1_ + v*v2_;
-    ray.set_intersecting_triangle(this);
+    Vertex intersection_vertex = (1-u-v)*v0_ + u*v1_ + v*v2_;
+    ray.set_intersection_point(IntersectionPoint(intersection_vertex, Direction(0,0,0), Material(0.f, 0.f, 0.f, this->color_)));
     ray.set_color(this->color_);
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
     z = t;
