@@ -10,9 +10,11 @@ private:
   float transparence_;
   ColorDbl color_;
 
+public:
   float get_diffuse() { return diffuse_; }
   float get_specular() { return specular_; }
   float get_transparence() { return transparence_; }
+  ColorDbl get_color() { return color_; }
 
 public:
   Material(float diffuse, float specular, float transparence, ColorDbl color);
