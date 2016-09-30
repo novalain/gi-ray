@@ -10,6 +10,7 @@
 class Scene {
 private:
   std::vector<std::unique_ptr<SceneObject>> scene_objects_;
+  std::vector<std::unique_ptr<SceneObject>> scene_lights_;
 
   void InitRoom();
   void InitObjects();
