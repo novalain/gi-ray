@@ -17,13 +17,11 @@ int main() {
   //cam.CreateImage("max_intensity_ep1",true);
   //cam.CreateImage("sqrt_intensity_ep1",false);
 
-  Material m = Material(0.5f, 0.5f, 0.5f, COLOR_GREEN);
-
   cam.ChangeEyePos();
 
   cam.Render(scene);
   cam.CreateImage("max_intensity_ep2",true);
- // cam.CreateImage("sqrt_intensity_ep2",false);
+  cam.CreateImage("sqrt_intensity_ep2",false);
 
   double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
   std::cout << "Execution time: " << duration << std::endl;

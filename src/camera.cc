@@ -123,6 +123,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p) {
   return result;
 }
 
+//TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
 IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& scene) {
   //To make sure we update the z_buffer upon collision.
   float z_buffer = FLT_MAX;
