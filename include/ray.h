@@ -12,11 +12,11 @@ private:
   Vertex v_end_;
   ColorDbl color_;
   // TODO: make smart pointer
-  IntersectionPoint* intersection_point_;
+  IntersectionPoint* intersection_point_ = nullptr;
 
 public:
   Ray() {}
-  ~Ray() { delete intersection_point_; }
+  ~Ray() { if(intersection_point_) { delete intersection_point_; } }
   Ray(Vertex v_start, Vertex v_end) : v_start_(v_start), v_end_(v_end) {}
 
   //TODO: implement GetTriangle() ?
@@ -26,6 +26,7 @@ public:
 
   void set_color(ColorDbl color) { color_ = color; }
   void set_intersection_point(IntersectionPoint* p) { intersection_point_ = p; }
+  IntersectionPoint* get_intersection_point() { return intersection_point_; }
 
 };
 

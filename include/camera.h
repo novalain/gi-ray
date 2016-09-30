@@ -4,9 +4,11 @@
 #include <glm/glm.hpp>
 #include <stdio.h>
 #include <string>
+#include <vector>
+
 #include "commons.h"
 #include "pixel.h"
-#include <vector>
+#include "intersection_point.h"
 
 /**
   Warning: Stack size is OS-dependent and max is 8182 kb on Ubuntu 64
@@ -76,6 +78,8 @@ private:
   void ClearColorBuffer(ColorDbl clear_color);
   void CreateImage(std::string filename, const bool& normalize_intensities);
   ColorDbl Raytrace(Ray& ray, Scene& scene);
+  IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene);
+  ColorDbl Shade(Ray& ray, IntersectionPoint& p);
 };
 
 #endif // CAMERA_H
