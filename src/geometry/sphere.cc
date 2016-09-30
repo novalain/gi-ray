@@ -3,7 +3,14 @@
 #include <iostream>
 
 Sphere::Sphere(Vertex position, float radius, ColorDbl color)
-    : SceneObject(position), color_(color) {
+    : SceneObject(position) {
+  assert(radius > 0);
+  radius_ = radius;
+  material_ = Material(0,1,0,color);
+}
+
+Sphere::Sphere(Vertex position, float radius, Material material)
+    : SceneObject(position), material_(material) {
   assert(radius > 0);
   radius_ = radius;
 }
@@ -24,9 +31,9 @@ bool Sphere::RayIntersection(Ray& ray, float& z) {
     return false;
   }
 
-  Direction unit_normal = glm::normalize(ray.end() - this->position_);
-  Vertex intersection_point = this->position_ + unit_normal * radius_;
-  ray.set_intersection_point(new IntersectionPoint(intersection_point, unit_normal, Material(0.f, 0.f, 0.f, this->color_)));
+  Direction unit_normal = glm::normalize(ray.end() - position_);
+  Vertex intersection_point = position_ + unit_normal * radius_;
+  ray.set_intersection_point(new IntersectionPoint(intersection_point, unit_normal, material_));
   z = fmin(-b/2 + sqrt(sqrt_term), -b/2 - sqrt(sqrt_term));
   return true;
 }

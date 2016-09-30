@@ -34,7 +34,7 @@ $(bld)material.o:	$(src)material.cc
 $(bld)camera.o: $(src)camera.cc $(bld)pixel.o
 	$(CC) $(flags) $(include) -o $(bld)camera.o -c $(src)camera.cc
 
-$(bld)triangle.o: $(geo)triangle.cc
+$(bld)triangle.o: $(geo)triangle.cc $(src)material.cc
 	$(CC) $(flags) $(include) -o $(bld)triangle.o -c $(geo)triangle.cc
 
 $(bld)ray.o: $(src)ray.cc

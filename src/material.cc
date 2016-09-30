@@ -7,4 +7,7 @@ Material::Material(float diffuse,
     : diffuse_(diffuse),
       specular_(specular),
       transparence_(transparence),
-      color_(color) {}
+      color_(color) {
+  float sum = diffuse_ + specular_ + transparence_;
+  assert( sum <= 1.0f );
+}

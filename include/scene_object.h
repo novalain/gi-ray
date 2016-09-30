@@ -10,6 +10,8 @@ public:
   virtual ~SceneObject() = default;
   virtual bool RayIntersection(Ray& ray, float& z) = 0;
 
+  Vertex get_position() { return position_; }
+
 protected:
   SceneObject(Vertex position) { position_ = position; }
   SceneObject() = default;

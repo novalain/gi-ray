@@ -2,14 +2,16 @@
 #define SPHERE_H
 
 #include "scene_object.h"
+#include "material.h"
 
 class Sphere : public SceneObject {
 private:
   float radius_;
-  ColorDbl color_;
+  Material material_;
 
 public:
   Sphere(Vertex position, float radius, ColorDbl color);
+  Sphere(Vertex position, float radius, Material material);
 
   float get_radius() { return radius_; }
 
