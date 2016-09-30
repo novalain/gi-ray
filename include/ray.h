@@ -5,8 +5,7 @@
 // TODO: Can't forward declare due to destructorm, make smart pointer
 #include "intersection_point.h"
 
-class Ray
-{
+class Ray {
 private:
   Vertex v_start_;
   Vertex v_end_;
@@ -22,7 +21,7 @@ public:
   //TODO: implement GetTriangle() ?
   Vertex start() { return v_start_; }
   Vertex end() { return v_end_; }
-  ColorDbl get_color() { return color_;}
+  ColorDbl get_color() { return color_; }
 
   void set_color(ColorDbl color) { color_ = color; }
   void set_intersection_point(IntersectionPoint* p) { intersection_point_ = p; }

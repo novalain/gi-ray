@@ -18,16 +18,15 @@
   TODO: We might want to declare this array on the heap
   (no restrictions on size except when RAM is filled up)
 */
-#define WIDTH 1000
-#define HEIGHT 1000
+#define WIDTH 250
+#define HEIGHT 250
 
 typedef std::vector<std::vector<std::vector<int>>> ImageRgb;
 typedef std::vector<std::vector<Pixel>> Framebuffer;
 
 class Scene;
 
-class Camera
-{
+class Camera {
 private:
   Vertex eye_pos_[2];
   Vertex camera_plane_[4];
@@ -77,9 +76,10 @@ private:
   void Render(Scene& scene);
   void ClearColorBuffer(ColorDbl clear_color);
   void CreateImage(std::string filename, const bool& normalize_intensities);
+  //TODO: Move these to private scope?
   ColorDbl Raytrace(Ray& ray, Scene& scene);
   IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene);
-  ColorDbl Shade(Ray& ray, IntersectionPoint& p);
+  ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene);
 };
 
 #endif // CAMERA_H
