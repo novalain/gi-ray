@@ -18,12 +18,13 @@ Sphere::Sphere(Vertex position, float radius, Material material)
 bool Sphere::RayIntersection(Ray& ray, float& z) {
   Vertex o = ray.start();
   Vertex cp = position_;
-  Direction l = glm::normalize(ray.end() - ray.start());
+  Direction sphere_to_ray = o-cp;
+  Direction l = glm::normalize(ray.end() - o);
   float r = radius_;
 
   //float a = glm::dot(l, l); // == 1
-  float b = glm::dot(2.f*l, o-cp);
-  float c = glm::dot(o-cp, o-cp) - sqrt(r);
+  float b = glm::dot(2.f*l, sphere_to_ray);
+  float c = glm::dot(sphere_to_ray, sphere_to_ray) - sqrt(r);
 
   float sqrt_term = pow(b/2, 2.f) - c;
   // Complex solution, no collision

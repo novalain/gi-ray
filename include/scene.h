@@ -2,6 +2,7 @@
 #define SCENE_H
 
 #include "scene_object.h"
+#include "light.h"
 #include "triangle_based_object.h"
 #include "triangle_custom_shape.h"
 #include <memory>
@@ -10,7 +11,7 @@
 class Scene {
 private:
   std::vector<std::unique_ptr<SceneObject>> scene_objects_;
-  std::vector<std::unique_ptr<SceneObject>> scene_lights_;
+  std::vector<std::unique_ptr<Light>> scene_lights_;
 
   void InitRoom();
   void InitObjects();
@@ -20,6 +21,10 @@ public:
 
   const std::vector<std::unique_ptr<SceneObject>>& get_objects() const {
     return scene_objects_;
+  }
+
+  const std::vector<std::unique_ptr<Light>>& get_lights() const {
+    return scene_lights_;
   }
 };
 
