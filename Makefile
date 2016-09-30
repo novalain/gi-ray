@@ -62,7 +62,7 @@ run:
 	$(execfile)
 
 clear:
-	rm -rf $(bld)*.o $(execfile)
+	rm -rf $(bld)*.o $(execfile) ./results/*.ppm
 
 clearbld:
 	rm -rf $(bld)*.o

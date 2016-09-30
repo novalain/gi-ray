@@ -120,6 +120,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p) {
 
   // TODO: Check reflective and transmissive materials, call Raytrace() recursively,
   // Compute shadow rays etc.
+  return result;
 }
 
 IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& scene) {

@@ -16,7 +16,9 @@ void Triangle::CalcNormal() {
 }
 
 bool Triangle::RayIntersection(Ray& ray, float& z) {
-  Direction D = ray.end() - ray.start(); // vector from eye to pixel
+  Direction ps = ray.start(); // eye_position
+  Direction pe = ray.end(); // pixel centre
+  Direction D = pe - ps; // vector from eye to pixel
   // Simple check if the triangle is facing the camera
   // If non-negative it is facing away from the camera, i.e. not visible from camera
     //if ( glm::dot(normal_,glm::normalize(D)) >= 0) {
@@ -24,9 +26,7 @@ bool Triangle::RayIntersection(Ray& ray, float& z) {
     //}
 
   // According to the Möller Trumbore intersection algorithm
-  Direction ps = ray.start(); // eye_position
-  Direction pe = ray.end(); // pixel centre
-  Direction T = ray.start() - v0_;
+  Direction T = ps - v0_;
   Direction E1 = v1_ - v0_;
   Direction E2 = v2_ - v0_;
   Direction P = glm::cross(D, E2);
