@@ -3,11 +3,16 @@
 #include <iostream>
 
 Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2) : v0_(v0), v1_(v1), v2_(v2) {
-  color_ = COLOR_WHITE;
+  material_ = PERFECT_MIRROR;
   CalcNormal();
 }
 
-Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2, glm::vec3 color) : v0_(v0), v1_(v1), v2_(v2), color_(color) {
+Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2, glm::vec3 color) : v0_(v0), v1_(v1), v2_(v2) {
+  material_ = Material(0,1,0,color);
+  CalcNormal();
+}
+
+Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2, Material material) : v0_(v0), v1_(v1), v2_(v2), material_(material) {
   CalcNormal();
 }
 
@@ -35,9 +40,11 @@ bool Triangle::RayIntersection(Ray& ray, float& z) {
   float u = (glm::dot(P, T) / glm::dot(P, E1));
   float v = (glm::dot(Q, D) / glm::dot(P, E1));
 
+  //TODO: I think that t>1 is only valid for the ray that goes directly from the camera
+  //This should probably be changed to t>0 for other rays that has bounced
   if(u >= 0 && v >= 0 && u+v <= 1 && t > 1 && t < z) { //if collision with a triangle closer to cam than before
     Vertex intersection_vertex = (1-u-v)*v0_ + u*v1_ + v*v2_;
-    ray.set_intersection_point(new IntersectionPoint(intersection_vertex, this->normal_, Material(0.f, 0.f, 0.f, this->color_)));
+    ray.set_intersection_point(new IntersectionPoint(intersection_vertex, normal_, material_));
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
     z = t;
     return true;

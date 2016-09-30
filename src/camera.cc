@@ -106,7 +106,7 @@ void Camera::Render(Scene& scene) {
   }
 }
 
-ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p) {
+ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
   // TODO: loop through lights in scene and remove hardcode
   PointLight pl = PointLight(Vertex(0, 2, -2), 0.01f, COLOR_WHITE);
   Direction light_direction = pl.get_position() - p.get_position();
@@ -123,6 +123,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p) {
   return result;
 }
 
+//TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
 IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& scene) {
   //To make sure we update the z_buffer upon collision.
   float z_buffer = FLT_MAX;
@@ -142,7 +143,7 @@ IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& s
 ColorDbl Camera::Raytrace(Ray& ray, Scene& scene) {
   IntersectionPoint* intersection_point = GetClosestIntersectionPointInScene(ray, scene);
   if (intersection_point) {
-    return Shade(ray, *intersection_point);
+    return Shade(ray, *intersection_point, scene);
   }
   return COLOR_BLACK;
 }
