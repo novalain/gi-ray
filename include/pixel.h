@@ -5,8 +5,7 @@
 
 class Ray;
 
-class Pixel
-{
+class Pixel {
 private:
   glm::vec3 color_;
 
