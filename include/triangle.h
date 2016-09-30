@@ -20,7 +20,6 @@ public:
   Triangle(Vertex v0, Vertex v1, Vertex v2, Material material);
 
   Direction get_normal() { return normal_; }
-  ColorDbl get_color() { return material_.get_color(); }
   Material get_material() { return material_; }
 
   bool RayIntersection(Ray& ray, float& z);

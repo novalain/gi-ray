@@ -44,7 +44,6 @@ bool Triangle::RayIntersection(Ray& ray, float& z) {
   //This should probably be changed to t>0 for other rays that has bounced
   if(u >= 0 && v >= 0 && u+v <= 1 && t > 1 && t < z) { //if collision with a triangle closer to cam than before
     Vertex intersection_vertex = (1-u-v)*v0_ + u*v1_ + v*v2_;
-    //TODO: update the Material to something like: this->material or object->get_material()
     ray.set_intersection_point(new IntersectionPoint(intersection_vertex, normal_, material_));
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
     z = t;

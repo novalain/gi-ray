@@ -13,9 +13,9 @@ PointLight::PointLight(Vertex position) {
 }
 
 PointLight::PointLight(Vertex position, float intensity) {
-    position_ = position;
-    intensity_ = intensity;
-    color_ = COLOR_WHITE;
+  position_ = position;
+  intensity_ = intensity;
+  color_ = COLOR_WHITE;
 }
 
 PointLight::PointLight(Vertex position, float intensity, ColorDbl color) {
