@@ -11,6 +11,7 @@ private:
   ColorDbl color_;
 
 public:
+  Material() = default;
   Material(float diffuse, float specular, float transparence, ColorDbl color);
 
   float get_diffuse() { return diffuse_; }

@@ -25,8 +25,7 @@ void Scene::InitObjects() {
 
   scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
   scene_objects_.push_back(std::make_unique<Tetrahedron>(2.5f, 3.f, Vertex(8,-2,-2)));
-  scene_objects_.push_back(
-      std::make_unique<Sphere>(Vertex(8.f, 0.5f, 0), 1.5f, COLOR_CYAN));
+  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(8.f, 0.5f, 0), 1.5f, Material(1,0,0,COLOR_YELLOW)));
 }
 
 void Scene::InitRoom() {
@@ -48,59 +47,59 @@ void Scene::InitRoom() {
   Vertex vc5 = Vertex(10,  6,  5);
   Vertex vc6 = Vertex( 0,  6,  5);
 
-  // Colors
-  glm::vec3  color_floor   = COLOR_WHITE;
-  glm::vec3  color_ceiling = COLOR_BLACK;
-  glm::vec3  color_wall1   = COLOR_RED;
-  glm::vec3  color_wall2   = COLOR_GREEN;
-  glm::vec3  color_wall3   = COLOR_BLUE;
-  glm::vec3  color_wall4   = COLOR_CYAN;
-  glm::vec3  color_wall5   = COLOR_MAGENTA;
-  glm::vec3  color_wall6   = COLOR_YELLOW;
+  // Materials
+  Material floor_mat = Material(1,0,0, COLOR_WHITE);
+  Material ceiling_mat = Material(1,0,0, COLOR_BLACK);
+  Material wall1_mat = Material(1,0,0, COLOR_RED);
+  Material wall2_mat = Material(1,0,0, COLOR_GREEN);
+  Material wall3_mat = Material(1,0,0, COLOR_BLUE);
+  Material wall4_mat = Material(1,0,0, COLOR_CYAN);
+  Material wall5_mat = Material(1,0,0, COLOR_MAGENTA);
+  Material wall6_mat = Material(1,0,0, COLOR_YELLOW);
 
   std::vector<Triangle> triangle_list;
 
   // Floor
-  triangle_list.push_back(Triangle(vfC, vf6, vf1, color_floor));
-  triangle_list.push_back(Triangle(vfC, vf1, vf2, color_floor));
-  triangle_list.push_back(Triangle(vfC, vf2, vf3, color_floor));
-  triangle_list.push_back(Triangle(vfC, vf3, vf4, color_floor));
-  triangle_list.push_back(Triangle(vfC, vf4, vf5, color_floor));
-  triangle_list.push_back(Triangle(vfC, vf5, vf6, color_floor));
+  triangle_list.push_back(Triangle(vfC, vf6, vf1, floor_mat));
+  triangle_list.push_back(Triangle(vfC, vf1, vf2, floor_mat));
+  triangle_list.push_back(Triangle(vfC, vf2, vf3, floor_mat));
+  triangle_list.push_back(Triangle(vfC, vf3, vf4, floor_mat));
+  triangle_list.push_back(Triangle(vfC, vf4, vf5, floor_mat));
+  triangle_list.push_back(Triangle(vfC, vf5, vf6, floor_mat));
 
   // Ceiling
-  triangle_list.push_back(Triangle(vcC, vc1, vc6, color_ceiling));
-  triangle_list.push_back(Triangle(vcC, vc2, vc1, color_ceiling));
-  triangle_list.push_back(Triangle(vcC, vc3, vc2, color_ceiling));
-  triangle_list.push_back(Triangle(vcC, vc4, vc3, color_ceiling));
-  triangle_list.push_back(Triangle(vcC, vc5, vc4, color_ceiling));
-  triangle_list.push_back(Triangle(vcC, vc6, vc5, color_ceiling));
+  triangle_list.push_back(Triangle(vcC, vc1, vc6, ceiling_mat));
+  triangle_list.push_back(Triangle(vcC, vc2, vc1, ceiling_mat));
+  triangle_list.push_back(Triangle(vcC, vc3, vc2, ceiling_mat));
+  triangle_list.push_back(Triangle(vcC, vc4, vc3, ceiling_mat));
+  triangle_list.push_back(Triangle(vcC, vc5, vc4, ceiling_mat));
+  triangle_list.push_back(Triangle(vcC, vc6, vc5, ceiling_mat));
 
   /* Counter-clockwise order, starting with front */
 
   // Wall1
-  triangle_list.push_back(Triangle(vf2, vc2, vf3, color_wall1));
-  triangle_list.push_back(Triangle(vf3, vc2, vc3, color_wall1));
+  triangle_list.push_back(Triangle(vf2, vc2, vf3, wall1_mat));
+  triangle_list.push_back(Triangle(vf3, vc2, vc3, wall1_mat));
 
   // Wall 2
-  triangle_list.push_back(Triangle(vf3, vc3, vf4, color_wall2));
-  triangle_list.push_back(Triangle(vf4, vc3, vc4, color_wall2));
+  triangle_list.push_back(Triangle(vf3, vc3, vf4, wall2_mat));
+  triangle_list.push_back(Triangle(vf4, vc3, vc4, wall2_mat));
 
   // Wall 3
-  triangle_list.push_back(Triangle(vf4, vc4, vf5, color_wall3));
-  triangle_list.push_back(Triangle(vf5, vc4, vc5, color_wall3));
+  triangle_list.push_back(Triangle(vf4, vc4, vf5, wall3_mat));
+  triangle_list.push_back(Triangle(vf5, vc4, vc5, wall3_mat));
 
   // Wall 4
-  triangle_list.push_back(Triangle(vf5, vc5, vf6, color_wall4));
-  triangle_list.push_back(Triangle(vf6, vc5, vc6, color_wall4));
+  triangle_list.push_back(Triangle(vf5, vc5, vf6, wall4_mat));
+  triangle_list.push_back(Triangle(vf6, vc5, vc6, wall4_mat));
 
   // Wall 5
-  triangle_list.push_back(Triangle(vf6, vc6, vf1, color_wall5));
-  triangle_list.push_back(Triangle(vf1, vc6, vc1, color_wall5));
+  triangle_list.push_back(Triangle(vf6, vc6, vf1, wall5_mat));
+  triangle_list.push_back(Triangle(vf1, vc6, vc1, wall5_mat));
 
   // Wall 6
-  triangle_list.push_back(Triangle(vf1, vc1, vf2, color_wall6));
-  triangle_list.push_back(Triangle(vf2, vc1, vc2, color_wall6));
+  triangle_list.push_back(Triangle(vf1, vc1, vf2, wall6_mat));
+  triangle_list.push_back(Triangle(vf2, vc1, vc2, wall6_mat));
 
   scene_objects_.push_back(
       std::make_unique<TriangleCustomShape>(triangle_list));

@@ -3,23 +3,25 @@
 
 #include "commons.h"
 #include "ray.h"
+#include "material.h"
 
-class Triangle
-{
+class Triangle {
 private:
   Vertex v0_, v1_, v2_;
 
-  glm::vec3 normal_;
-  glm::vec3 color_;
+  Direction normal_;
+  Material material_;
 
   void CalcNormal();
 public:
   Triangle() {}
   Triangle(Vertex v0, Vertex v1, Vertex v2);
-  Triangle(Vertex v0, Vertex v1, Vertex v2, glm::vec3 color);
+  Triangle(Vertex v0, Vertex v1, Vertex v2, ColorDbl color);
+  Triangle(Vertex v0, Vertex v1, Vertex v2, Material material);
 
-  glm::vec3 get_normal() { return normal_; }
-  glm::vec3 get_color() { return color_; }
+  Direction get_normal() { return normal_; }
+  ColorDbl get_color() { return material_.get_color(); }
+  Material get_material() { return material_; }
 
   bool RayIntersection(Ray& ray, float& z);
 
