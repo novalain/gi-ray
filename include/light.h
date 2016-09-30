@@ -9,6 +9,7 @@ protected:
   float intensity_;
   ColorDbl color_;
 public:
+  virtual ~Light() = default;
   float get_intensity() { return intensity_; }
   ColorDbl get_color() { return color_; }
 };
