@@ -16,25 +16,49 @@ Sphere::Sphere(Vertex position, float radius, Material material)
 }
 
 bool Sphere::RayIntersection(Ray& ray, float& z) {
-  Vertex o = ray.get_origin();
-  Vertex cp = position_;
-  Direction sphere_to_ray = o-cp;
-  Direction l = glm::normalize(ray.get_direction());
-  float r = radius_;
-
-  //float a = glm::dot(l, l); // == 1
-  float b = glm::dot(2.f*l, sphere_to_ray);
-  float c = glm::dot(sphere_to_ray, sphere_to_ray) - sqrt(r);
-
-  float sqrt_term = pow(b/2, 2.f) - c;
-  // Complex solution, no collision
-  if (sqrt_term < 0) {
+  Direction L = ray.get_origin() - position_;
+  Direction dir = ray.get_direction();
+  float radius2 = radius_ * radius_;
+  float a = glm::dot(dir, dir);
+  float b = 2 * glm::dot(dir, L);
+  float c = glm::dot(L, L) - radius2;
+  float t0, t1;
+  if (!SolveQuadratic(a, b, c, t0, t1)) {
     return false;
   }
+  if (t0 < 0) {
+    t0 = t1;
+  }
+  if (t0 < 0) {
+    return false;
+  }
+  z = t0;
+  Vertex intersection_point = ray.get_origin() + ray.get_direction() * z;
+  // TODO: This way should be equivalent to above, but it's not
+  // Vertex intersection_point = position_ + radius_ * unit_normal;
+  Direction normal = intersection_point - position_;
+  ray.set_intersection_point(
+      new IntersectionPoint(intersection_point, normal, material_));
+  return true;
+}
 
-  Direction unit_normal = -l;
-  Vertex intersection_point = position_ + unit_normal * radius_;
-  ray.set_intersection_point(new IntersectionPoint(intersection_point, unit_normal, material_));
-  z = fmin(-b/2 + sqrt(sqrt_term), -b/2 - sqrt(sqrt_term));
+bool Sphere::SolveQuadratic(const float& a,
+                            const float& b,
+                            const float& c,
+                            float& x0,
+                            float& x1) {
+  float discr = b * b - 4 * a * c;
+  if (discr < 0) {
+    return false;
+  } else if (discr == 0) {
+    x0 = x1 = -0.5 * b / a;
+  } else {
+    float q = (b > 0) ? -0.5 * (b + sqrt(discr)) : -0.5 * (b - sqrt(discr));
+    x0 = q / a;
+    x1 = c / q;
+  }
+  if (x0 > x1) {
+    std::swap(x0, x1);
+  }
   return true;
 }
