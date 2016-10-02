@@ -25,7 +25,7 @@ void Scene::InitObjects() {
 
   scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
   scene_objects_.push_back(std::make_unique<Tetrahedron>(2.5f, 3.f, Vertex(8,-2,-2)));
-  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(8.f, 0.5f, 0), 1.5f, Material(1,0,0,COLOR_YELLOW)));
+  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(5.f, 0.f, 0.f), 1.5f, Material(1,0,0,COLOR_YELLOW)));
 }
 
 void Scene::InitRoom() {
@@ -49,7 +49,7 @@ void Scene::InitRoom() {
 
   // Materials
   Material floor_mat = Material(1,0,0, COLOR_WHITE);
-  Material ceiling_mat = Material(1,0,0, COLOR_BLACK);
+  Material ceiling_mat = Material(1,0,0, COLOR_WHITE);
   Material wall1_mat = Material(1,0,0, COLOR_RED);
   Material wall2_mat = Material(1,0,0, COLOR_GREEN);
   Material wall3_mat = Material(1,0,0, COLOR_BLUE);
