@@ -21,9 +21,8 @@ void Triangle::CalcNormal() {
 }
 
 bool Triangle::RayIntersection(Ray& ray, float& z) {
-  Direction ps = ray.start(); // eye_position
-  Direction pe = ray.end(); // pixel centre
-  Direction D = pe - ps; // vector from eye to pixel
+  Direction ps = ray.get_origin(); // eye_position
+  Direction D = ray.get_direction();
   // Simple check if the triangle is facing the camera
   // If non-negative it is facing away from the camera, i.e. not visible from camera
     //if ( glm::dot(normal_,glm::normalize(D)) >= 0) {

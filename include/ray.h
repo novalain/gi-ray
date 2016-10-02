@@ -2,24 +2,23 @@
 #define RAY_H
 
 #include "commons.h"
-// TODO: Can't forward declare due to destructorm, make smart pointer
+// TODO: Can't forward declare due to destructor, make smart pointer
 #include "intersection_point.h"
 
 class Ray {
 private:
-  Vertex v_start_;
-  Vertex v_end_;
-  // TODO: make smart pointer
+  Vertex origin_;
+  Direction direction_;
+  // TODO: make smart pointer and get rid of destructor
   IntersectionPoint* intersection_point_ = nullptr;
 
 public:
   Ray() {}
   ~Ray() { if(intersection_point_) { delete intersection_point_; } }
-  Ray(Vertex v_start, Vertex v_end) : v_start_(v_start), v_end_(v_end) {}
+  Ray(Vertex origin, Direction direction) : origin_(origin), direction_(direction) {}
 
-  //TODO: implement GetTriangle() ?
-  Vertex start() { return v_start_; }
-  Vertex end() { return v_end_; }
+  Vertex get_origin() { return origin_; }
+  Direction get_direction() { return direction_; }
 
   void set_intersection_point(IntersectionPoint* p) { intersection_point_ = p; }
   IntersectionPoint* get_intersection_point() { return intersection_point_; }

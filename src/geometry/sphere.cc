@@ -16,10 +16,10 @@ Sphere::Sphere(Vertex position, float radius, Material material)
 }
 
 bool Sphere::RayIntersection(Ray& ray, float& z) {
-  Vertex o = ray.start();
+  Vertex o = ray.get_origin();
   Vertex cp = position_;
   Direction sphere_to_ray = o-cp;
-  Direction l = glm::normalize(ray.end() - o);
+  Direction l = glm::normalize(ray.get_direction());
   float r = radius_;
 
   //float a = glm::dot(l, l); // == 1
@@ -32,7 +32,7 @@ bool Sphere::RayIntersection(Ray& ray, float& z) {
     return false;
   }
 
-  Direction unit_normal = glm::normalize(ray.end() - position_);
+  Direction unit_normal = -l;
   Vertex intersection_point = position_ + unit_normal * radius_;
   ray.set_intersection_point(new IntersectionPoint(intersection_point, unit_normal, material_));
   z = fmin(-b/2 + sqrt(sqrt_term), -b/2 - sqrt(sqrt_term));

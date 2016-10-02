@@ -99,7 +99,7 @@ void Camera::Render(Scene& scene) {
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
-      Ray ray = Ray(eye_pos_[pos_idx_],pixel_center);
+      Ray ray = Ray(eye_pos_[pos_idx_], pixel_center - eye_pos_[pos_idx_]);
       ColorDbl out_color = Raytrace(ray, scene);
       framebuffer_[i][j].set_color(out_color);
     }
