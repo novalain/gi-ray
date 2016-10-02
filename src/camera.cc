@@ -107,17 +107,19 @@ void Camera::Render(Scene& scene) {
 }
 
 ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
-  // TODO: loop through lights in scene and remove hardcode
-  PointLight pl = PointLight(Vertex(3.f, 0.f, -1.f), 1.f, COLOR_WHITE);
-  Direction light_direction = pl.get_position() - p.get_position();
-  float light_distance_squared = glm::dot(light_direction, light_direction);
-  light_direction = glm::normalize(light_direction);
-  Direction unit_surface_normal = glm::normalize(p.get_normal());
-
-  // Set dot product to zero if light is behind the surface
-  float l_dot_n = fmax(0.f, glm::dot(light_direction, unit_surface_normal));
-  ColorDbl diffuse = pl.get_intensity() * l_dot_n * p.get_material().get_color();
-  return diffuse;
+  float diffuse_accumulator = 0.f;
+  const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
+  for (auto& light : lights) {
+    Direction light_direction = light->get_position() - p.get_position();
+    float light_distance_squared = glm::dot(light_direction, light_direction);
+    light_direction = glm::normalize(light_direction);
+    Direction unit_surface_normal = glm::normalize(p.get_normal());
+    // Set dot product to zero if light is behind the surface
+    float l_dot_n = fmax(0.f, glm::dot(light_direction, unit_surface_normal));
+    // TODO: shadow rays
+    diffuse_accumulator += light->get_intensity() * l_dot_n;
+  }
+  return diffuse_accumulator * p.get_material().get_color();
 }
 
 //TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
