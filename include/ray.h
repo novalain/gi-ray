@@ -15,7 +15,7 @@ private:
 public:
   Ray() {}
   ~Ray() { if(intersection_point_) { delete intersection_point_; } }
-  Ray(Vertex origin, Direction direction) : origin_(origin), direction_(direction) {}
+  Ray(Vertex origin, Direction direction) : origin_(origin), direction_(glm::normalize(direction)) {}
 
   Vertex get_origin() { return origin_; }
   Direction get_direction() { return direction_; }
