@@ -34,23 +34,25 @@ bool Triangle::RayIntersection(Ray& ray, float& z) {
   Direction E1 = v1_ - v0_;
   Direction E2 = v2_ - v0_;
   Direction P = glm::cross(D, E2);
+
+  float det = glm::dot(P, E1);
+
   Direction Q = glm::cross(T, E1);
-  float t = (glm::dot(Q,E2) / glm::dot(P, E1));
-  float u = (glm::dot(P, T) / glm::dot(P, E1));
-  float v = (glm::dot(Q, D) / glm::dot(P, E1));
+  float t = glm::dot(Q,E2) / det;
+  float u = glm::dot(P, T) / det;
+  float v = glm::dot(Q, D) / det;
 
   //TODO: I think that t>1 is only valid for the ray that goes directly from the camera
   //This should probably be changed to t>0 for other rays that has bounced
-  if(u >= 0 && v >= 0 && u+v <= 1 && t > 1 && t < z) { //if collision with a triangle closer to cam than before
+  if(u >= 0 && v >= 0 && u+v <= 1 && t > 0.f && t < z) { //if collision with a triangle closer to cam than before
     Vertex intersection_vertex = (1-u-v)*v0_ + u*v1_ + v*v2_;
     ray.set_intersection_point(new IntersectionPoint(intersection_vertex, normal_, material_));
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
     z = t;
     return true;
-  } else {
-    // std::cout << "Unsuccessful update of pixel! :'(" << std::endl; //TODO: remove when EVERYTHING is implemented
-    return false;
   }
+  // std::cout << "Unsuccessful update of pixel! :'(" << std::endl; //TODO: remove when EVERYTHING is implemented
+  return false;
 }
 
 void Triangle::Print() const {
