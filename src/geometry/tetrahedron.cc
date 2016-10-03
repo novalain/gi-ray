@@ -13,7 +13,7 @@ Tetrahedron::Tetrahedron(Triangle& t0,
   triangles_.push_back(t3);
 }
 
-Tetrahedron::Tetrahedron(float width, float height, Vertex position) {
+Tetrahedron::Tetrahedron(float width, float height, Vertex position, Material material) {
   Vertex v0 = Vertex(width,0,0);
   float a = 2*M_PI/3;
   glm::mat3 rotmat = glm::mat3(cos(a), sin(a), 0,
@@ -29,10 +29,10 @@ Tetrahedron::Tetrahedron(float width, float height, Vertex position) {
   v3 = v3+position;
 
   //TODO the colours should not be like this later on
-  Triangle t0 = Triangle(v0, v2, v1, COLOR_PINK); //bottom
-  Triangle t1 = Triangle(v1, v2, v3, COLOR_RED); // "front"
-  Triangle t2 = Triangle(v0, v1, v3, COLOR_YELLOW); // "left back"
-  Triangle t3 = Triangle(v0, v3, v2, COLOR_CYAN); // "right back"
+  Triangle t0 = Triangle(v0, v2, v1, material); //bottom
+  Triangle t1 = Triangle(v1, v2, v3, material); // "front"
+  Triangle t2 = Triangle(v0, v1, v3, material); // "left back"
+  Triangle t3 = Triangle(v0, v3, v2, material); // "right back"
   triangles_.push_back(t0);
   triangles_.push_back(t1);
   triangles_.push_back(t2);
