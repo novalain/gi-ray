@@ -78,7 +78,7 @@ private:
   void CreateImage(std::string filename, const bool& normalize_intensities);
   //TODO: Move these to private scope?
   ColorDbl Raytrace(Ray& ray, Scene& scene);
-  IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene);
+  IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene, float& z_buffer);
   ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene);
 };
 
