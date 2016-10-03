@@ -16,6 +16,12 @@ public:
   float get_radius() { return radius_; }
 
   virtual bool RayIntersection(Ray& ray, float& z);
+
+  static bool SolveQuadratic(const float& a,
+                             const float& b,
+                             const float& c,
+                             float& x0,
+                             float& x1);
 };
 
 #endif // SPHERE_H

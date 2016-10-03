@@ -99,7 +99,7 @@ void Camera::Render(Scene& scene) {
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
-      Ray ray = Ray(eye_pos_[pos_idx_],pixel_center);
+      Ray ray = Ray(pixel_center, pixel_center - eye_pos_[pos_idx_]);
       ColorDbl out_color = Raytrace(ray, scene);
       framebuffer_[i][j].set_color(out_color);
     }
@@ -107,26 +107,31 @@ void Camera::Render(Scene& scene) {
 }
 
 ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
-  // TODO: loop through lights in scene and remove hardcode
-  PointLight pl = PointLight(Vertex(0, 2, -2), 0.01f, COLOR_WHITE);
-  Direction light_direction = pl.get_position() - p.get_position();
+  float diffuse_accumulator = 0.f;
+  const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
+  for (auto& light : lights) {
+    Direction light_direction = light->get_position() - p.get_position();
 
-  float intensity = pl.get_intensity();
-  ColorDbl light_color = pl.get_color();
-  Direction L = glm::normalize(pl.get_position() - p.get_position());
-  Direction N = glm::normalize(p.get_normal());
+    // Set dot product to zero if light is behind the surface
+    Direction unit_surface_normal = glm::normalize(p.get_normal());
+    Vertex shadow_point_origin = p.get_position() + unit_surface_normal * 0.00001f;
 
-  ColorDbl result = glm::dot(L, N) * light_color * intensity * p.get_material().get_color();
-
-  // TODO: Check reflective and transmissive materials, call Raytrace() recursively,
-  // Compute shadow rays etc.
-  return result;
+    // Compute shadow ray
+    Ray shadow_ray = Ray(shadow_point_origin, light_direction);
+    float z_shadow = FLT_MAX;
+    IntersectionPoint* p1 = GetClosestIntersectionPointInScene(shadow_ray, scene, z_shadow);
+    if (p1 && (z_shadow * z_shadow > glm::dot(light_direction, light_direction))) {
+      Direction unit_light_direction = glm::normalize(light_direction);
+      float l_dot_n = fmax(0.f, glm::dot(unit_light_direction, unit_surface_normal));
+      diffuse_accumulator += light->get_intensity() * l_dot_n;
+    }
+  }
+  return diffuse_accumulator * p.get_material().get_color();
 }
 
 //TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
-IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& scene) {
+IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& scene, float& z_buffer) {
   //To make sure we update the z_buffer upon collision.
-  float z_buffer = FLT_MAX;
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
   for (auto& object : objects) {
     // z_buffer is passed as reference and gets updated
@@ -141,10 +146,12 @@ IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& s
 }
 
 ColorDbl Camera::Raytrace(Ray& ray, Scene& scene) {
-  IntersectionPoint* intersection_point = GetClosestIntersectionPointInScene(ray, scene);
+  float z_buffer = FLT_MAX;
+  IntersectionPoint* intersection_point = GetClosestIntersectionPointInScene(ray, scene, z_buffer);
   if (intersection_point) {
     return Shade(ray, *intersection_point, scene);
   }
+  std::cout << "Ligg här och gnag... " << std::endl;
   return COLOR_BLACK;
 }
 
