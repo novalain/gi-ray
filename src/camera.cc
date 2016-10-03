@@ -107,8 +107,24 @@ void Camera::Render(Scene& scene) {
 }
 
 ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
-  float diffuse_accumulator = 0.f;
+  ColorDbl hit_color = COLOR_BLACK;
+
+  if (p.get_material().get_specular() > 0.f) {
+    Direction n = glm::normalize(p.get_normal());
+    Direction d = ray.get_direction();
+
+    Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
+    Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
+    Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
+    // return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
+    return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
+  //} else if (p.get_material().get_transparence() > 0.f) {
+  //  return COLOR_PINK;
+  }
+
+  // Fully diffuse
   const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
+  float diffuse_accumulator = 0.f;
   for (auto& light : lights) {
     Direction light_direction = light->get_position() - p.get_position();
 
@@ -123,7 +139,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
     if (p1 && (z_shadow * z_shadow > glm::dot(light_direction, light_direction))) {
       Direction unit_light_direction = glm::normalize(light_direction);
       float l_dot_n = fmax(0.f, glm::dot(unit_light_direction, unit_surface_normal));
-      diffuse_accumulator += light->get_intensity() * l_dot_n;
+      diffuse_accumulator += light->get_intensity() * p.get_material().get_diffuse() * l_dot_n;
     }
   }
   return diffuse_accumulator * p.get_material().get_color();
