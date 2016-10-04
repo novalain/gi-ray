@@ -55,12 +55,17 @@ private:
 
   static void SaveImage(const char* img_name, ImageRgb& image);
 
+  ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene);
+  ColorDbl Raytrace(Ray& ray, Scene& scene);
+  ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene);
+  IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene, float& z_buffer);
  public:
   Camera();
   Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction up_vector);
 
   int get_width() { return WIDTH; }
   int get_height() { return HEIGHT; }
+  //TODO: clean this up (or implement it?)
   // float get_fov() { return fov_; }
   // float get_focal_length() { return focal_length_; }
   // Vertex get_position() { return position_; }
@@ -76,10 +81,6 @@ private:
   void Render(Scene& scene);
   void ClearColorBuffer(ColorDbl clear_color);
   void CreateImage(std::string filename, const bool& normalize_intensities);
-  //TODO: Move these to private scope?
-  ColorDbl Raytrace(Ray& ray, Scene& scene);
-  IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene, float& z_buffer);
-  ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene);
 };
 
 #endif // CAMERA_H

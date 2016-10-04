@@ -6,6 +6,12 @@
 #include "point_light.h"
 #include <iostream>
 
+// TODO: Place these somewhere that makes the most sense and remove some?
+const float EPSILON = 0.00001f;
+const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
+const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
+const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
+
 Camera::Camera() {
 }
 
@@ -107,8 +113,12 @@ void Camera::Render(Scene& scene) {
 }
 
 ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
-  ColorDbl hit_color = COLOR_BLACK;
 
+  if ( ray.get_importance() < 0.01f ) {
+    std::cout << "Importance too low! Returning black!" << std::endl;
+    return COLOR_BLACK;
+  }
+  // If object has specular component
   if (p.get_material().get_specular() > 0.f) {
     Direction n = glm::normalize(p.get_normal());
     Direction d = ray.get_direction();
@@ -118,10 +128,11 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
     Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
     // return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
     return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
-  //} else if (p.get_material().get_transparence() > 0.f) {
-  //  return COLOR_PINK;
   }
-
+  // If object has refractive component
+  if (p.get_material().get_transparence() > 0.f) {
+    return HandleRefraction(ray, p, scene);
+  }
   // Fully diffuse
   const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
   float diffuse_accumulator = 0.f;
@@ -143,6 +154,55 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
     }
   }
   return diffuse_accumulator * p.get_material().get_color();
+}
+
+// TODO: Refactor later
+// Done - according to lecture4 slides
+ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene) {
+  //TODO: check why these normalizations are NOT redundant
+  Direction n = glm::normalize(p.get_normal());
+  Direction I = ray.get_direction();
+  // assert(std::abs(1.0f - (float)glm::length(p.get_normal())) < EPSILON);
+  assert(std::abs(1.0f - (float) glm::length(I)) < EPSILON);
+  float I_dot_n = glm::dot(n,I);
+  bool is_inside_object = ray.get_refraction_status();
+
+  if ( !is_inside_object ) {
+    Direction T = REFRACTION_FACTOR_OI * I - n*(REFRACTION_FACTOR_OI*I_dot_n +
+        sqrtf(1 - REFRACTION_FACTOR_OI*REFRACTION_FACTOR_OI * (1 - I_dot_n*I_dot_n)));
+    Vertex refraction_point_origin = p.get_position() - n * EPSILON;
+    Ray refraction_ray = Ray(refraction_point_origin,T,ray.get_importance()*0.8f);
+    refraction_ray.set_refraction_status(true);
+    return p.get_material().get_transparence() * Raytrace(refraction_ray, scene);
+  } else { // we are outside of a glass object, trying to go inside
+    n = -n; // because we are at the inside of the object now
+    // calculate angle between normal and incoming ray direction
+    // according to formula: dot(u,v) = |u||v|cos(a) = cos(a), if |u|=|v|=1
+    // => a = arccos(dot(u,v)), providing u and v are normalized
+    float alpha = acos(I_dot_n);
+
+    if ( alpha > CRITICAL_ANGLE ) { // if total inner reflection
+      Vertex inner_reflection_ray_origin = p.get_position() + n * EPSILON;
+      Direction reflection_direction = I - 2*(glm::dot(I, n))*n;
+      Ray total_inner_reflection_ray = Ray(inner_reflection_ray_origin, reflection_direction, ray.get_importance()*0.8f);
+      total_inner_reflection_ray.set_refraction_status(true);
+      return p.get_material().get_transparence() * Raytrace(total_inner_reflection_ray, scene);
+    } else if ( CRITICAL_ANGLE == alpha ) {
+      std::cerr << "THIS SHOULD NEVER (or at least very rarely) BE PRINTED!!!!!" << std::endl;
+      return COLOR_BLACK;
+    }
+    // else exiting glass object!
+    Direction T = REFRACTION_FACTOR_IO * I - n*(-REFRACTION_FACTOR_IO*I_dot_n +
+        sqrtf(1 - REFRACTION_FACTOR_IO*REFRACTION_FACTOR_IO * (1 - I_dot_n*I_dot_n)));
+    // TODO: this can probably be removed, but might be annoying to debug if wrong
+    if ( 1.0f - glm::length(T) > EPSILON ) {
+      std::cerr << "THIS SHOULD NOT BE PRINTED! Length of T = " << glm::length(T) << std::endl;
+    }
+    Vertex outgoing_refraction_ray_origin = p.get_position() - n * EPSILON;
+    Ray refraction_ray = Ray(outgoing_refraction_ray_origin, T, ray.get_importance()*0.8f);
+    refraction_ray.set_refraction_status(false);
+    return p.get_material().get_transparence() * Raytrace(refraction_ray, scene);
+  }
 }
 
 //TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
