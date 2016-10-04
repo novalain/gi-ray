@@ -12,24 +12,22 @@ Scene::Scene() {
 }
 
 void Scene::InitObjects() {
-  Vertex v0 = Vertex( 8,  6, -2);
-  Vertex v1 = Vertex( 9,  3, -2);
-  Vertex v2 = Vertex(10,  6, -2);
-  Vertex v3 = Vertex( 9,  4.5f,  1);
+  // Vertex v0 = Vertex( 8,  6, -2);
+  // Vertex v1 = Vertex( 9,  3, -2);
+  // Vertex v2 = Vertex(10,  6, -2);
+  // Vertex v3 = Vertex( 9,  4.5f,  1);
 
-  Material tetra1_mat = Material(1,0,0, COLOR_RED);
-  Material tetra2_mat = Material(1,0,0, COLOR_GREEN);
+  // // Bottom
+  // Triangle t0 = Triangle(v0, v2, v1, tetra1_mat);
+  // // Sides
+  // Triangle t1 = Triangle(v0, v1, v3, tetra1_mat); // "front"
+  // Triangle t2 = Triangle(v1, v2, v3, tetra1_mat); // "back"
+  // Triangle t3 = Triangle(v0, v3, v2, ColorDbl(100,100,100)); // "left side"
 
-  // Bottom
-  Triangle t0 = Triangle(v0, v2, v1, tetra1_mat);
-  // Sides
-  Triangle t1 = Triangle(v0, v1, v3, tetra1_mat); // "front"
-  Triangle t2 = Triangle(v1, v2, v3, tetra1_mat); // "back"
-  Triangle t3 = Triangle(v0, v3, v2, ColorDbl(100,100,100)); // "left side"
-
-  scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
-  //scene_objects_.push_back(std::make_unique<Tetrahedron>(2.5f, 3.f, Vertex(8,-2,-2), tetra2_mat));
-  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(5.f, 0.f, 0.f), 1.5f, Material(0.f, 1.f, 0,COLOR_YELLOW)));
+  // scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
+  scene_objects_.push_back(std::make_unique<Tetrahedron>(3.f, 3.5f, Vertex(6, -2.f,-3.5f), GLASS_MAT));
+  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(7.f, -0.2f, 3.f), 1.0f, GLASS_MAT));
+  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(6.f, 2.5f, -2.5f), 1.5f, PERFECT_MIRROR));
 }
 
 void Scene::InitRoom() {
@@ -111,5 +109,5 @@ void Scene::InitRoom() {
 }
 
 void Scene::InitLights() {
-    scene_lights_.push_back(std::make_unique<PointLight>(Vertex(8,0,-3), 50.f));
+    scene_lights_.push_back(std::make_unique<PointLight>(Vertex(2,0,4), 50.f));
 }
