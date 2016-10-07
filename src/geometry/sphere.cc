@@ -27,14 +27,12 @@ IntersectionPoint* Sphere::RayIntersection(Ray& ray) {
     return nullptr;
   }
   if (t0 < 0) {
+    if (t1 < 0) {
+      return nullptr;
+    }
     t0 = t1;
   }
-  if (t0 < 0) {
-    return nullptr;
-  }
   Vertex intersection_point = ray.get_origin() + ray.get_direction() * t0;
-  // TODO: This way should be equivalent to above, but it's not
-  // Vertex intersection_point = position_ + radius_ * unit_normal;
   Direction normal = intersection_point - position_;
   return new IntersectionPoint(intersection_point, normal, material_, t0);
 }
