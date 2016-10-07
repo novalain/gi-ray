@@ -15,7 +15,7 @@ Sphere::Sphere(Vertex position, float radius, Material material)
   radius_ = radius;
 }
 
-bool Sphere::RayIntersection(Ray& ray, float& z) {
+IntersectionPoint* Sphere::RayIntersection(Ray& ray) {
   Direction L = ray.get_origin() - position_;
   Direction dir = ray.get_direction();
   float radius2 = radius_ * radius_;
@@ -24,22 +24,19 @@ bool Sphere::RayIntersection(Ray& ray, float& z) {
   float c = glm::dot(L, L) - radius2;
   float t0, t1;
   if (!SolveQuadratic(a, b, c, t0, t1)) {
-    return false;
+    return nullptr;
   }
   if (t0 < 0) {
     t0 = t1;
   }
   if (t0 < 0) {
-    return false;
+    return nullptr;
   }
-  z = t0;
-  Vertex intersection_point = ray.get_origin() + ray.get_direction() * z;
+  Vertex intersection_point = ray.get_origin() + ray.get_direction() * t0;
   // TODO: This way should be equivalent to above, but it's not
   // Vertex intersection_point = position_ + radius_ * unit_normal;
   Direction normal = intersection_point - position_;
-  ray.set_intersection_point(
-      new IntersectionPoint(intersection_point, normal, material_));
-  return true;
+  return new IntersectionPoint(intersection_point, normal, material_, t0);
 }
 
 bool Sphere::SolveQuadratic(const float& a,

@@ -4,6 +4,8 @@
 #include "scene_object.h"
 #include "material.h"
 
+class IntersectionPoint;
+
 class Sphere : public SceneObject {
 private:
   float radius_;
@@ -15,7 +17,7 @@ public:
 
   float get_radius() { return radius_; }
 
-  virtual bool RayIntersection(Ray& ray, float& z);
+  virtual IntersectionPoint* RayIntersection(Ray& ray);
 
   static bool SolveQuadratic(const float& a,
                              const float& b,

@@ -4,6 +4,8 @@
 #include "commons.h"
 #include "light.h"
 
+class IntersectionPoint;
+
 class PointLight : public Light {
 protected:
 public:
@@ -12,8 +14,8 @@ public:
   PointLight(Vertex position, float intensity);
   PointLight(Vertex position, float intensity, ColorDbl color);
 
-  virtual bool RayIntersection(Ray& ray, float& z) {
-    return false; // a ray cannot hit a point of zero area
+  virtual IntersectionPoint* RayIntersection(Ray& ray) {
+    return nullptr; // a ray cannot hit a point of zero area
   }
 };
 

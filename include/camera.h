@@ -58,7 +58,8 @@ private:
   ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
   ColorDbl Raytrace(Ray& ray, Scene& scene, unsigned int depth);
   ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
-  IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene, float& z_buffer);
+  IntersectionPoint* GetClosestIntersectionPoint(Ray& ray, Scene& scene);
+  bool CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction);
  public:
   Camera();
   Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction up_vector);

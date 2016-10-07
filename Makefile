@@ -6,7 +6,7 @@ bin=./bin/
 bld=./build/
 flags=-std=c++14
 execfile=$(bin)GI-Ray
-compall=$(flags) $(src)main.cc $(src)intersection_point.cc $(src)material.cc $(geo)sphere.cc $(geo)triangle_custom_shape.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(src)point_light.cc $(include)
+compall=$(flags) $(src)main.cc $(src)intersection_point.cc $(src)material.cc $(geo)sphere.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(src)point_light.cc $(include)
 
 #CFLAGS= -c -Wall
 #WARNINGS = -Wall
@@ -20,9 +20,9 @@ allinone:
 	$(CC) $(compall) -o $(execfile) #-Wall
 
 raytracer: $(bld)main.o
-	$(CC) $(flags) $(bld)intersection_point.o $(bld)material.o $(bld)point_light.o $(bld)sphere.o $(bld)tetrahedron.o $(bld)triangle_custom_shape.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
+	$(CC) $(flags) $(bld)intersection_point.o $(bld)material.o $(bld)point_light.o $(bld)sphere.o $(bld)tetrahedron.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
 
-$(bld)main.o: $(src)main.cc $(bld)intersection_point.o $(bld)material.o $(bld)camera.o $(bld)sphere.o $(bld)ray.o $(bld)scene.o $(bld)tetrahedron.o $(bld)triangle_custom_shape.o $(bld)point_light.o
+$(bld)main.o: $(src)main.cc $(bld)intersection_point.o $(bld)material.o $(bld)camera.o $(bld)sphere.o $(bld)ray.o $(bld)scene.o $(bld)tetrahedron.o $(bld)point_light.o
 	$(CC) $(flags) $(include) -o $(bld)main.o -c $(src)main.cc
 
 $(bld)intersection_point.o:	$(src)intersection_point.cc
@@ -48,9 +48,6 @@ $(bld)scene.o: $(src)scene.cc $(bld)triangle.o $(bld)point_light.o
 
 $(bld)tetrahedron.o: $(geo)tetrahedron.cc $(bld)triangle.o
 	$(CC) $(flags) $(include) -o $(bld)tetrahedron.o -c $(geo)tetrahedron.cc
-
-$(bld)triangle_custom_shape.o: $(geo)triangle_custom_shape.cc $(bld)triangle.o
-	$(CC) $(flags) $(include) -o $(bld)triangle_custom_shape.o -c $(geo)triangle_custom_shape.cc
 
 $(bld)point_light.o: $(src)point_light.cc
 	$(CC) $(flags) $(include) -o $(bld)point_light.o -c $(src)point_light.cc
