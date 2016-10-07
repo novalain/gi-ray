@@ -4,8 +4,9 @@
 #include "commons.h"
 #include "ray.h"
 #include "material.h"
+#include "scene_object.h"
 
-class Triangle {
+class Triangle : public SceneObject {
 private:
   Vertex v0_, v1_, v2_;
 
@@ -22,7 +23,7 @@ public:
   Direction get_normal() { return normal_; }
   Material get_material() { return material_; }
 
-  bool RayIntersection(Ray& ray, float& z);
+  IntersectionPoint* RayIntersection(Ray& ray);
 
   void Print() const;
 };

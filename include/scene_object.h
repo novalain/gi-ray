@@ -4,11 +4,12 @@
 #include "commons.h"
 
 class Ray;
+class IntersectionPoint;
 
 class SceneObject {
 public:
   virtual ~SceneObject() = default;
-  virtual bool RayIntersection(Ray& ray, float& z) = 0;
+  virtual IntersectionPoint* RayIntersection(Ray& ray) = 0;
 
   Vertex get_position() { return position_; }
 
