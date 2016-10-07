@@ -3,8 +3,6 @@
 
 #include "scene_object.h"
 #include "light.h"
-#include "triangle_based_object.h"
-#include "triangle_custom_shape.h"
 #include <memory>
 #include <vector>
 

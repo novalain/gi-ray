@@ -11,7 +11,7 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
-const unsigned int MAX_DEPTH = 6; // What Max depth makes sense?
+const unsigned int MAX_DEPTH = 9; // What Max depth makes sense?
 
 Camera::Camera() {
 }
@@ -141,13 +141,14 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
 
     // Compute shadow ray
     Ray shadow_ray = Ray(shadow_point_origin, light_direction);
-    float z_shadow = FLT_MAX;
-    IntersectionPoint* p1 = GetClosestIntersectionPointInScene(shadow_ray, scene, z_shadow);
-    if (p1 && (z_shadow * z_shadow > glm::dot(light_direction, light_direction))) {
+    bool in_shadow = CastShadowRay(shadow_ray, scene, light_direction);
+
+    if (!in_shadow) {
       Direction unit_light_direction = glm::normalize(light_direction);
       float l_dot_n = fmax(0.f, glm::dot(unit_light_direction, unit_surface_normal));
       diffuse_accumulator += light->get_intensity() * p.get_material().get_diffuse() * l_dot_n;
     }
+
   }
   return diffuse_accumulator * p.get_material().get_color();
 }
@@ -202,24 +203,37 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
 }
 
 //TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
-IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& scene, float& z_buffer) {
+IntersectionPoint* Camera::GetClosestIntersectionPoint(Ray& ray, Scene& scene) {
   //To make sure we update the z_buffer upon collision.
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+  IntersectionPoint* return_point;
+  float z_buffer = FLT_MAX;
   for (auto& object : objects) {
-    // z_buffer is passed as reference and gets updated
-    // TODO: Make void OR make rayintersection return intersection point instead of keeping it in the ray instance
-    bool update_pixel_color = object->RayIntersection(ray, z_buffer);
-    //bool collision = object->RayIntersection(ray, z_buffer);
-    //if (update_pixel_color) {
-    //  c = ray.get_color();
-    //}
+    IntersectionPoint* p = object->RayIntersection(ray);
+    if (p && p->get_z() < z_buffer) {
+      z_buffer = p->get_z();
+      return_point = p;
+    }
   }
-  return ray.get_intersection_point();
+  return return_point;
+}
+
+bool Camera::CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction) {
+  const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+  float z_buffer = FLT_MAX;
+  for (auto& object : objects) {
+    IntersectionPoint* p = object->RayIntersection(ray);
+    if (p && p->get_z() < glm::length(light_direction) &&
+        p->get_material().get_transparence() == 0.f) {
+      return true;
+    }
+  }
+  return false;
 }
 
 ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   float z_buffer = FLT_MAX;
-  IntersectionPoint* intersection_point = GetClosestIntersectionPointInScene(ray, scene, z_buffer);
+  IntersectionPoint* intersection_point = GetClosestIntersectionPoint(ray, scene);
   if (intersection_point && depth < MAX_DEPTH) {
     return Shade(ray, *intersection_point, scene, depth);
   }

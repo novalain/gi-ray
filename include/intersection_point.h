@@ -9,10 +9,12 @@ private:
   Vertex position_;
   Direction normal_;
   Material material_;
+  float z_;
 public:
   IntersectionPoint();
-  IntersectionPoint(Vertex position, Direction normal, Material material_);
+  IntersectionPoint(Vertex position, Direction normal, Material material_, float z);
 
+  float get_z() { return z_; }
   Vertex get_position() { return position_; }
   Direction get_normal() { return normal_; }
   Material get_material() { return material_; }

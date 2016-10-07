@@ -20,7 +20,7 @@ void Triangle::CalcNormal() {
   normal_ = glm::cross(v1_-v0_,v2_-v1_);
 }
 
-bool Triangle::RayIntersection(Ray& ray, float& z) {
+IntersectionPoint* Triangle::RayIntersection(Ray& ray) {
   Direction ps = ray.get_origin(); // eye_position
   Direction D = ray.get_direction();
   // Simple check if the triangle is facing the camera
@@ -42,17 +42,13 @@ bool Triangle::RayIntersection(Ray& ray, float& z) {
   float u = glm::dot(P, T) / det;
   float v = glm::dot(Q, D) / det;
 
-  //TODO: I think that t>1 is only valid for the ray that goes directly from the camera
-  //This should probably be changed to t>0 for other rays that has bounced
-  if(u >= 0 && v >= 0 && u+v <= 1 && t > 0.f && t < z) { //if collision with a triangle closer to cam than before
+  if(u >= 0 && v >= 0 && u+v <= 1 && t > 0.f) { //if collision with a triangle closer to cam than before
     Vertex intersection_vertex = (1-u-v)*v0_ + u*v1_ + v*v2_;
-    ray.set_intersection_point(new IntersectionPoint(intersection_vertex, normal_, material_));
     // std::cout << "Successful update of pixel!" << std::endl; //TODO: remove when EVERYTHING is implemented
-    z = t;
-    return true;
+    return new IntersectionPoint(intersection_vertex, normal_, material_, t);
   }
   // std::cout << "Unsuccessful update of pixel! :'(" << std::endl; //TODO: remove when EVERYTHING is implemented
-  return false;
+  return nullptr;
 }
 
 void Triangle::Print() const {
