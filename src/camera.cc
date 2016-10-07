@@ -11,6 +11,7 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
+const unsigned int MAX_DEPTH = 6; // What Max depth makes sense?
 
 Camera::Camera() {
 }
@@ -106,18 +107,13 @@ void Camera::Render(Scene& scene) {
     for (int j = 0; j < HEIGHT; j++) {
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
       Ray ray = Ray(pixel_center, pixel_center - eye_pos_[pos_idx_]);
-      ColorDbl out_color = Raytrace(ray, scene);
+      ColorDbl out_color = Raytrace(ray, scene, 0);
       framebuffer_[i][j].set_color(out_color);
     }
   }
 }
 
-ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
-
-  if ( ray.get_importance() < 0.01f ) {
-    std::cout << "Importance too low! Returning black!" << std::endl;
-    return COLOR_BLACK;
-  }
+ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
   // If object has specular component
   if (p.get_material().get_specular() > 0.f) {
     Direction n = glm::normalize(p.get_normal());
@@ -127,11 +123,11 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
     Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
     Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
     // return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
-    return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
+    return p.get_material().get_specular() * Raytrace(reflection_ray, scene, depth + 1);
   }
   // If object has refractive component
   if (p.get_material().get_transparence() > 0.f) {
-    return HandleRefraction(ray, p, scene);
+    return HandleRefraction(ray, p, scene, depth);
   }
   // Fully diffuse
   const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
@@ -158,7 +154,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene) {
 
 // TODO: Refactor later
 // Done - according to lecture4 slides
-ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene) {
+ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
   //TODO: check why these normalizations are NOT redundant
   Direction n = glm::normalize(p.get_normal());
   Direction I = ray.get_direction();
@@ -171,9 +167,9 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene) 
     Direction T = REFRACTION_FACTOR_OI * I - n*(REFRACTION_FACTOR_OI*I_dot_n +
         sqrtf(1 - REFRACTION_FACTOR_OI*REFRACTION_FACTOR_OI * (1 - I_dot_n*I_dot_n)));
     Vertex refraction_point_origin = p.get_position() - n * EPSILON;
-    Ray refraction_ray = Ray(refraction_point_origin,T,ray.get_importance()*0.8f);
+    Ray refraction_ray = Ray(refraction_point_origin, T);
     refraction_ray.set_refraction_status(true);
-    return p.get_material().get_transparence() * Raytrace(refraction_ray, scene);
+    return p.get_material().get_transparence() * Raytrace(refraction_ray, scene, depth + 1);
   } else { // we are outside of a glass object, trying to go inside
     n = -n; // because we are at the inside of the object now
     // calculate angle between normal and incoming ray direction
@@ -184,9 +180,9 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene) 
     if ( alpha > CRITICAL_ANGLE ) { // if total inner reflection
       Vertex inner_reflection_ray_origin = p.get_position() + n * EPSILON;
       Direction reflection_direction = I - 2*(glm::dot(I, n))*n;
-      Ray total_inner_reflection_ray = Ray(inner_reflection_ray_origin, reflection_direction, ray.get_importance()*0.8f);
+      Ray total_inner_reflection_ray = Ray(inner_reflection_ray_origin, reflection_direction);
       total_inner_reflection_ray.set_refraction_status(true);
-      return p.get_material().get_transparence() * Raytrace(total_inner_reflection_ray, scene);
+      return p.get_material().get_transparence() * Raytrace(total_inner_reflection_ray, scene, depth + 1);
     } else if ( CRITICAL_ANGLE == alpha ) {
       std::cerr << "THIS SHOULD NEVER (or at least very rarely) BE PRINTED!!!!!" << std::endl;
       return COLOR_BLACK;
@@ -199,9 +195,9 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene) 
       std::cerr << "THIS SHOULD NOT BE PRINTED! Length of T = " << glm::length(T) << std::endl;
     }
     Vertex outgoing_refraction_ray_origin = p.get_position() - n * EPSILON;
-    Ray refraction_ray = Ray(outgoing_refraction_ray_origin, T, ray.get_importance()*0.8f);
+    Ray refraction_ray = Ray(outgoing_refraction_ray_origin, T);
     refraction_ray.set_refraction_status(false);
-    return p.get_material().get_transparence() * Raytrace(refraction_ray, scene);
+    return p.get_material().get_transparence() * Raytrace(refraction_ray, scene, depth + 1);
   }
 }
 
@@ -221,11 +217,11 @@ IntersectionPoint* Camera::GetClosestIntersectionPointInScene(Ray& ray, Scene& s
   return ray.get_intersection_point();
 }
 
-ColorDbl Camera::Raytrace(Ray& ray, Scene& scene) {
+ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   float z_buffer = FLT_MAX;
   IntersectionPoint* intersection_point = GetClosestIntersectionPointInScene(ray, scene, z_buffer);
-  if (intersection_point) {
-    return Shade(ray, *intersection_point, scene);
+  if (intersection_point && depth < MAX_DEPTH) {
+    return Shade(ray, *intersection_point, scene, depth);
   }
   std::cout << "Ligg här och gnag... " << std::endl;
   return COLOR_BLACK;

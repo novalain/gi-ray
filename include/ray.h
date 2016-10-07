@@ -9,7 +9,7 @@ class Ray {
 private:
   Vertex origin_;
   Direction direction_;
-  float importance_;
+  float importance_; // To be used in Monte-Carlo
   bool is_inside_object = false; // if inside an object
   // TODO: make smart pointer and get rid of destructor
   IntersectionPoint* intersection_point_ = nullptr;

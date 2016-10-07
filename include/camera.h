@@ -55,9 +55,9 @@ private:
 
   static void SaveImage(const char* img_name, ImageRgb& image);
 
-  ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene);
-  ColorDbl Raytrace(Ray& ray, Scene& scene);
-  ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene);
+  ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
+  ColorDbl Raytrace(Ray& ray, Scene& scene, unsigned int depth);
+  ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
   IntersectionPoint* GetClosestIntersectionPointInScene(Ray& ray, Scene& scene, float& z_buffer);
  public:
   Camera();
