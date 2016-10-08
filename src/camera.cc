@@ -131,7 +131,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
   }
   // Fully diffuse
   const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
-  float diffuse_accumulator = 0.f;
+  ColorDbl color_accumulator = COLOR_BLACK;
   for (auto& light : lights) {
     Direction light_direction = light->get_position() - p.get_position();
 
@@ -146,11 +146,11 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
     if (!in_shadow) {
       Direction unit_light_direction = glm::normalize(light_direction);
       float l_dot_n = fmax(0.f, glm::dot(unit_light_direction, unit_surface_normal));
-      diffuse_accumulator += light->get_intensity() * p.get_material().get_diffuse() * l_dot_n;
+      color_accumulator += light->get_intensity() * light->get_color() * l_dot_n;
     }
 
   }
-  return diffuse_accumulator * p.get_material().get_color();
+  return color_accumulator * p.get_material().get_color() * p.get_material().get_diffuse();
 }
 
 // TODO: Refactor later
