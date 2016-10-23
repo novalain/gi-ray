@@ -14,7 +14,7 @@ const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
 const unsigned int MAX_DEPTH = 2;
-const unsigned int NUM_SAMPLES = 1;
+const unsigned int NUM_SAMPLES = 8;
 std::default_random_engine generator;
 std::uniform_real_distribution<float> distribution(0, 1);
 
@@ -78,6 +78,8 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 }
 
 void Camera::Render(Scene& scene) {
+  //TODO: Super sampling
+  #pragma omp parallel for
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
