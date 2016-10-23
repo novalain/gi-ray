@@ -113,5 +113,5 @@ void Scene::InitRoom() {
 }
 
 void Scene::InitLights() {
-    scene_lights_.push_back(std::make_unique<PointLight>(Vertex(2.f,0.f,3.f), 1.f, COLOR_WHITE));
+  scene_lights_.push_back(std::make_unique<PointLight>(Vertex(2.f,0.f,3.f), 1.f, COLOR_WHITE));
 }

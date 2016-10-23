@@ -5,6 +5,7 @@
 // TODO: Remove when we have all point lights in vector
 #include "point_light.h"
 #include <fstream>
+#include <random>
 #include <iostream>
 
 // TODO: Place these somewhere that makes the most sense and remove some?
@@ -12,7 +13,10 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
-const unsigned int MAX_DEPTH = 2; // What Max depth makes sense?
+const unsigned int MAX_DEPTH = 2;
+const unsigned int NUM_SAMPLES = 1;
+std::default_random_engine generator;
+std::uniform_real_distribution<float> distribution(0, 1);
 
 Camera::Camera() {
 }
@@ -92,7 +96,7 @@ ColorDbl Camera::CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Sce
 
     // Set dot product to zero if light is behind the surface
     Direction unit_surface_normal = glm::normalize(p.get_normal());
-    Vertex shadow_point_origin = p.get_position() + unit_surface_normal * 0.00001f;
+    Vertex shadow_point_origin = p.get_position() + unit_surface_normal * EPSILON;
 
     // Compute shadow ray
     Ray shadow_ray = Ray(shadow_point_origin, light_direction);
@@ -107,20 +111,68 @@ ColorDbl Camera::CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Sce
   return color_accumulator * p.get_material().get_color() * p.get_material().get_diffuse();
 }
 
+// TODO: move these somewhere else
+void CreateLocalCoordinateSystemForIntersectionPoint(const Direction& N, Direction& Nt, Direction& Nb) {
+  if (std::fabs(N.x) > std::fabs(N.y)) {
+    Nt = Direction(N.z, 0, -N.x) / sqrtf(N.x * N.x + N.z * N.z);
+  } else {
+    Nt = Direction(0, -N.z, N.y) / sqrtf(N.y * N.y + N.z * N.z);
+  }
+  Nb = glm::cross(N, Nt);
+}
+
+Direction UniformSampleHemisphere(const float& r1, const float& r2) {
+  // cos(theta) = u1 = y
+  // cos^2(theta) + sin^2(theta) = 1 -> sin(theta) = srtf(1 - cos^2(theta))
+  float sin_theta = sqrtf(1 - r1 * r1);
+  float phi = 2 * M_PI * r2;
+  float x = sin_theta * cosf(phi);
+  float z = sin_theta * sinf(phi);
+  return Direction(x, r1, z);
+}
+
 ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
+  // Perfect mirror
   if (p.get_material().get_specular() > 0.f) {
     Direction n = glm::normalize(p.get_normal());
     Direction d = ray.get_direction();
 
-    Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
+    Vertex reflection_point_origin = p.get_position() + n * EPSILON;
     Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
     Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
     return Raytrace(reflection_ray, scene, depth + 1);
   }
+  // Glass
   if (p.get_material().get_transparence() > 0.f) { // If object has refractive component
     return HandleRefraction(ray, p, scene, depth);
   }
-  return CalculateDirectIllumination(ray, p, scene) * p.get_material().get_color();
+  // Diffuse
+  Direction Nt, Nb;
+  Direction unit_normal = glm::normalize(p.get_normal());
+  CreateLocalCoordinateSystemForIntersectionPoint(unit_normal, Nt, Nb);
+  const float PDF = 1.f / (2.f * (float)M_PI);
+  ColorDbl indirect_illumination = COLOR_BLACK;
+  for (int n = 0; n < NUM_SAMPLES; n++) {
+    float r1 = distribution(generator);
+    float r2 = distribution(generator);
+    // TODO: Importance sampling
+    Direction sample_dir_local = UniformSampleHemisphere(r1, r2);
+    Direction sample_dir_world = Direction(
+        sample_dir_local.x * Nb.x + sample_dir_local.y * unit_normal.x +
+            sample_dir_local.z * Nt.x,
+        sample_dir_local.x * Nb.y + sample_dir_local.y * unit_normal.y +
+            sample_dir_local.z * Nt.y,
+        sample_dir_local.x * Nb.z + sample_dir_local.y * unit_normal.z +
+            sample_dir_local.z * Nt.z);
+    Ray sample_ray = Ray(p.get_position() + unit_normal * EPSILON, sample_dir_world);
+    // Multiply with r1 which is cos theta compenent
+    indirect_illumination = indirect_illumination + r1*Raytrace(sample_ray, scene, depth + 1);
+  }
+  // TODO: Should theoretically be divided with PDF but gives better result if it's not?
+  indirect_illumination = (indirect_illumination) / ((float)NUM_SAMPLES * PDF);
+  ColorDbl direct_illumination = CalculateDirectIllumination(ray, p, scene);
+  // Indirect illumination is multipled with 2.f according to math
+  return (direct_illumination / (float)M_PI + 2.f * indirect_illumination) * p.get_material().get_color();
 }
 
 // TODO: Refactor later
@@ -206,6 +258,6 @@ ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   if (intersection_point && depth < MAX_DEPTH) {
     return Shade(ray, *intersection_point, scene, depth);
   }
-  std::cout << "Ligg här och gnag... " << std::endl;
+  //std::cout << "Ligg här och gnag... " << std::endl;
   return COLOR_BLACK;
 }
