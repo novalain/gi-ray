@@ -58,6 +58,7 @@ private:
   ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
   ColorDbl Raytrace(Ray& ray, Scene& scene, unsigned int depth);
   ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
+  ColorDbl CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Scene& scene);
   IntersectionPoint* GetClosestIntersectionPoint(Ray& ray, Scene& scene);
   bool CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction);
  public:

@@ -113,23 +113,7 @@ void Camera::Render(Scene& scene) {
   }
 }
 
-ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
-  // If object has specular component
-  if (p.get_material().get_specular() > 0.f) {
-    Direction n = glm::normalize(p.get_normal());
-    Direction d = ray.get_direction();
-
-    Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
-    Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
-    Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
-    // return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
-    return p.get_material().get_specular() * Raytrace(reflection_ray, scene, depth + 1);
-  }
-  // If object has refractive component
-  if (p.get_material().get_transparence() > 0.f) {
-    return HandleRefraction(ray, p, scene, depth);
-  }
-  // Fully diffuse
+ColorDbl Camera::CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Scene& scene) {
   const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
   ColorDbl color_accumulator = COLOR_BLACK;
   for (auto& light : lights) {
@@ -148,9 +132,24 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
       float l_dot_n = fmax(0.f, glm::dot(unit_light_direction, unit_surface_normal));
       color_accumulator += light->get_intensity() * light->get_color() * l_dot_n;
     }
-
   }
   return color_accumulator * p.get_material().get_color() * p.get_material().get_diffuse();
+}
+
+ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
+  if (p.get_material().get_specular() > 0.f) {
+    Direction n = glm::normalize(p.get_normal());
+    Direction d = ray.get_direction();
+
+    Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
+    Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
+    Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
+    return Raytrace(reflection_ray, scene, depth + 1);
+  }
+  if (p.get_material().get_transparence() > 0.f) { // If object has refractive component
+    return HandleRefraction(ray, p, scene, depth);
+  }
+  return CalculateDirectIllumination(ray, p, scene) * p.get_material().get_color();
 }
 
 // TODO: Refactor later
