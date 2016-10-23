@@ -26,13 +26,15 @@ void Scene::InitObjects() {
   // scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
   //scene_objects_.push_back(std::make_unique<Tetrahedron>(3.f, 3.5f, Vertex(6, -2.f,-3.5f), GLASS_MAT));
 
-  scene_objects_.push_back(std::make_unique<Triangle>(v0, v2, v1, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Triangle>(v0, v1, v3, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Triangle>(v1, v2, v3, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Triangle>(v0, v3, v2, GLASS_MAT));
+  //scene_objects_.push_back(std::make_unique<Triangle>(v0, v2, v1, GLASS_MAT));
+  //scene_objects_.push_back(std::make_unique<Triangle>(v0, v1, v3, GLASS_MAT));
+  //scene_objects_.push_back(std::make_unique<Triangle>(v1, v2, v3, GLASS_MAT));
+  //scene_objects_.push_back(std::make_unique<Triangle>(v0, v3, v2, GLASS_MAT));
 
-  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(7.f, -0.2f, 3.f), 1.0f, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(6.f, 2.5f, -2.5f), 1.5f, PERFECT_MIRROR));
+  scene_objects_.push_back(std::make_unique<Sphere>(
+      Vertex(7.f, -0.2f, 3.f), 1.0f, Material(1.f, 0.f, 0.f, COLOR_PINK)));
+  scene_objects_.push_back(
+      std::make_unique<Sphere>(Vertex(6.f, 2.5f, -2.5f), 1.5f, PERFECT_MIRROR));
 }
 
 void Scene::InitRoom() {
@@ -59,7 +61,7 @@ void Scene::InitRoom() {
   Material ceiling_mat = Material(1,0,0, COLOR_WHITE);
   Material wall1_mat = Material(1,0,0, COLOR_RED);
   Material wall2a_mat = Material(1,0,0, COLOR_GREEN);
-  Material wall2b_mat = Material(0,1,0, COLOR_GREEN);
+  Material wall2b_mat = Material(1,0,0, COLOR_GREEN);
   Material wall3_mat = Material(1,0,0, COLOR_BLUE);
   Material wall4_mat = Material(1,0,0, COLOR_CYAN);
   Material wall5_mat = Material(1,0,0, COLOR_MAGENTA);
@@ -111,5 +113,5 @@ void Scene::InitRoom() {
 }
 
 void Scene::InitLights() {
-    scene_lights_.push_back(std::make_unique<PointLight>(Vertex(2,0,4), 50.f, COLOR_WHITE));
+    scene_lights_.push_back(std::make_unique<PointLight>(Vertex(2.f,0.f,3.f), 1.f, COLOR_WHITE));
 }

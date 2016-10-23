@@ -10,18 +10,9 @@
 #include "pixel.h"
 #include "intersection_point.h"
 
-/**
-  Warning: Stack size is OS-dependent and max is 8182 kb on Ubuntu 64
-  declaring an array on the stack with width*height*4*3 < 8182000 => width*height < 681833
-  i.e size over 825 (width == height) will throw
-
-  TODO: We might want to declare this array on the heap
-  (no restrictions on size except when RAM is filled up)
-*/
 #define WIDTH 250
 #define HEIGHT 250
 
-typedef std::vector<std::vector<std::vector<int>>> ImageRgb;
 typedef std::vector<std::vector<Pixel>> Framebuffer;
 
 class Scene;
@@ -47,13 +38,6 @@ private:
 
   //TODO: aspect ratio?
   //float aspect_ratio_;
-
-  // void init(glm::vec3 position, glm::vec3 direction, glm::vec3 up_vector);
-  double CalcMaxIntensity();
-  void NormalizeByMaxIntensity(ImageRgb& image_rgb);
-  void NormalizeBySqrt(ImageRgb& image_rgb);
-
-  static void SaveImage(const char* img_name, ImageRgb& image);
 
   ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
   ColorDbl Raytrace(Ray& ray, Scene& scene, unsigned int depth);
@@ -82,7 +66,7 @@ private:
   void ChangeEyePos();
   void Render(Scene& scene);
   void ClearColorBuffer(ColorDbl clear_color);
-  void CreateImage(std::string filename, const bool& normalize_intensities);
+  void CreateImage(std::string filename);
 };
 
 #endif // CAMERA_H

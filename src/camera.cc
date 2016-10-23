@@ -4,6 +4,7 @@
 #include "scene_object.h"
 // TODO: Remove when we have all point lights in vector
 #include "point_light.h"
+#include <fstream>
 #include <iostream>
 
 // TODO: Place these somewhere that makes the most sense and remove some?
@@ -11,7 +12,7 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
-const unsigned int MAX_DEPTH = 9; // What Max depth makes sense?
+const unsigned int MAX_DEPTH = 2; // What Max depth makes sense?
 
 Camera::Camera() {
 }
@@ -47,51 +48,21 @@ void Camera::ChangeEyePos() {
   // }
 }
 
-double Camera::CalcMaxIntensity() {
-  double max_intensity = -1.0;
-
-  //TODO: Parallelize this?
-  // Store max_intensity in shared memory? Make sure that it doesn't get
-  // overwritten incorrectly because of parallel computations.
-  for(int x = 0; x < WIDTH; x++) {
-    for(int y = 0; y < HEIGHT; y++) {
-      max_intensity = fmax(framebuffer_[x][y].get_color().x, max_intensity);
-      max_intensity = fmax(framebuffer_[x][y].get_color().y, max_intensity);
-      max_intensity = fmax(framebuffer_[x][y].get_color().z, max_intensity);
+void Camera::CreateImage(std::string filename) {
+  const float gamma = 1.f;
+  std::ofstream ofs;
+  ofs.open("results/" + filename + std::to_string(WIDTH) + "x" + std::to_string(HEIGHT) + ".ppm");
+  ofs << "P6\n" << WIDTH << " " << HEIGHT << "\n255\n";
+  for (int x = WIDTH - 1; x >= 0; x--) {
+    for (int y = HEIGHT - 1; y >= 0; y--) {
+      Pixel& p = framebuffer_[y][x];
+      char r = (char)(255 * clamp(0, 1, powf(p.get_color().x, 1 / gamma)));
+      char g = (char)(255 * clamp(0, 1, powf(p.get_color().y, 1 / gamma)));
+      char b = (char)(255 * clamp(0, 1, powf(p.get_color().z, 1 / gamma)));
+      ofs << r << g << b;
     }
   }
-  return max_intensity;
-}
-
-void Camera::NormalizeByMaxIntensity(ImageRgb& image_rgb) {
-  double max_intensity = CalcMaxIntensity();
-  double normalizing_factor = 255.99/max_intensity;
-
-  // TODO: Parallelize this?
-  for(int x = 0; x < WIDTH; x++) {
-    for(int y = 0; y < HEIGHT; y++) {
-      // int r = framebuffer_[x][y].get_color().x * normalizing_factor;
-      // int g = framebuffer_[x][y].get_color().y * normalizing_factor;
-      // int b = framebuffer_[x][y].get_color().z * normalizing_factor;
-      image_rgb[x][y][0] = (int) framebuffer_[x][y].get_color().x * normalizing_factor;
-      image_rgb[x][y][1] = (int) framebuffer_[x][y].get_color().y * normalizing_factor;
-      image_rgb[x][y][2] = (int) framebuffer_[x][y].get_color().z * normalizing_factor;
-    }
-  }
-}
-
-void Camera::NormalizeBySqrt(ImageRgb& image_rgb) {
-  for(int x = 0; x < WIDTH; x++) {
-    for(int y = 0; y < HEIGHT; y++) {
-      int r = (int) sqrt(framebuffer_[x][y].get_color().x);
-      int g = (int) sqrt(framebuffer_[x][y].get_color().y);
-      int b = (int) sqrt(framebuffer_[x][y].get_color().z);
-
-      image_rgb[x][y][0] = r > 255 ? 255 : r ;
-      image_rgb[x][y][1] = g > 255 ? 255 : g ;
-      image_rgb[x][y][2] = b > 255 ? 255 : b ;
-    }
-  }
+  ofs.close();
 }
 
 void Camera::ClearColorBuffer(ColorDbl clear_color) {
@@ -201,7 +172,6 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
   }
 }
 
-//TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
 IntersectionPoint* Camera::GetClosestIntersectionPoint(Ray& ray, Scene& scene) {
   //To make sure we update the z_buffer upon collision.
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
@@ -239,30 +209,3 @@ ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   std::cout << "Ligg här och gnag... " << std::endl;
   return COLOR_BLACK;
 }
-
-void Camera::CreateImage(std::string filename, const bool& normalize_intensities) {
-  //int image_rgb[ WIDTH ][ HEIGHT ][ 3 ];
-  ImageRgb image_rgb (WIDTH,std::vector<std::vector<int>>(HEIGHT,std::vector<int>(3)));
-  if (normalize_intensities) {
-    NormalizeByMaxIntensity(image_rgb);
-  } else {
-    NormalizeBySqrt(image_rgb);
-  }
-  filename = "results/" + filename + ".ppm";
-  SaveImage(filename.c_str(), image_rgb);
-}
-
-void Camera::SaveImage(const char* img_name,
-                        ImageRgb& image) {
-    FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
-    (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
-    for (int i = WIDTH-1; i >= 0; i-- ) {
-      for (int j = HEIGHT-1; j >= 0; j--) {
-        static unsigned char color[3];
-        color[0] = image[j][i][0]; // red
-        color[1] = image[j][i][1]; // green
-        color[2] = image[j][i][2]; // blue
-        (void)fwrite(color, 1, 3, fp);
-      }
-    }
-  }

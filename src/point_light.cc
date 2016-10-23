@@ -19,6 +19,9 @@ PointLight::PointLight(Vertex position, float intensity) {
 }
 
 PointLight::PointLight(Vertex position, float intensity, ColorDbl color) {
+  assert(color.x <= 1.f && color.x >= 0.f && color.y <= 1.f && color.y >= 0.f &&
+         color.z <= 1.f && color.z >= 0.f && intensity <= 1.f &&
+         intensity >= 0.f);
   position_ = position;
   intensity_ = intensity;
   color_ = color;
