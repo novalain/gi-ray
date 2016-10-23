@@ -4,6 +4,8 @@
 #include "scene_object.h"
 // TODO: Remove when we have all point lights in vector
 #include "point_light.h"
+#include <fstream>
+#include <random>
 #include <iostream>
 
 // TODO: Place these somewhere that makes the most sense and remove some?
@@ -11,7 +13,10 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
-const unsigned int MAX_DEPTH = 9; // What Max depth makes sense?
+const unsigned int MAX_DEPTH = 2;
+const unsigned int NUM_SAMPLES = 8;
+std::default_random_engine generator;
+std::uniform_real_distribution<float> distribution(0, 1);
 
 Camera::Camera() {
 }
@@ -47,51 +52,21 @@ void Camera::ChangeEyePos() {
   // }
 }
 
-double Camera::CalcMaxIntensity() {
-  double max_intensity = -1.0;
-
-  //TODO: Parallelize this?
-  // Store max_intensity in shared memory? Make sure that it doesn't get
-  // overwritten incorrectly because of parallel computations.
-  for(int x = 0; x < WIDTH; x++) {
-    for(int y = 0; y < HEIGHT; y++) {
-      max_intensity = fmax(framebuffer_[x][y].get_color().x, max_intensity);
-      max_intensity = fmax(framebuffer_[x][y].get_color().y, max_intensity);
-      max_intensity = fmax(framebuffer_[x][y].get_color().z, max_intensity);
+void Camera::CreateImage(std::string filename) {
+  const float gamma = 1.f;
+  std::ofstream ofs;
+  ofs.open("results/" + filename + std::to_string(WIDTH) + "x" + std::to_string(HEIGHT) + ".ppm");
+  ofs << "P6\n" << WIDTH << " " << HEIGHT << "\n255\n";
+  for (int x = WIDTH - 1; x >= 0; x--) {
+    for (int y = HEIGHT - 1; y >= 0; y--) {
+      Pixel& p = framebuffer_[y][x];
+      char r = (char)(255 * clamp(0, 1, powf(p.get_color().x, 1 / gamma)));
+      char g = (char)(255 * clamp(0, 1, powf(p.get_color().y, 1 / gamma)));
+      char b = (char)(255 * clamp(0, 1, powf(p.get_color().z, 1 / gamma)));
+      ofs << r << g << b;
     }
   }
-  return max_intensity;
-}
-
-void Camera::NormalizeByMaxIntensity(ImageRgb& image_rgb) {
-  double max_intensity = CalcMaxIntensity();
-  double normalizing_factor = 255.99/max_intensity;
-
-  // TODO: Parallelize this?
-  for(int x = 0; x < WIDTH; x++) {
-    for(int y = 0; y < HEIGHT; y++) {
-      // int r = framebuffer_[x][y].get_color().x * normalizing_factor;
-      // int g = framebuffer_[x][y].get_color().y * normalizing_factor;
-      // int b = framebuffer_[x][y].get_color().z * normalizing_factor;
-      image_rgb[x][y][0] = (int) framebuffer_[x][y].get_color().x * normalizing_factor;
-      image_rgb[x][y][1] = (int) framebuffer_[x][y].get_color().y * normalizing_factor;
-      image_rgb[x][y][2] = (int) framebuffer_[x][y].get_color().z * normalizing_factor;
-    }
-  }
-}
-
-void Camera::NormalizeBySqrt(ImageRgb& image_rgb) {
-  for(int x = 0; x < WIDTH; x++) {
-    for(int y = 0; y < HEIGHT; y++) {
-      int r = (int) sqrt(framebuffer_[x][y].get_color().x);
-      int g = (int) sqrt(framebuffer_[x][y].get_color().y);
-      int b = (int) sqrt(framebuffer_[x][y].get_color().z);
-
-      image_rgb[x][y][0] = r > 255 ? 255 : r ;
-      image_rgb[x][y][1] = g > 255 ? 255 : g ;
-      image_rgb[x][y][2] = b > 255 ? 255 : b ;
-    }
-  }
+  ofs.close();
 }
 
 void Camera::ClearColorBuffer(ColorDbl clear_color) {
@@ -103,6 +78,8 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 }
 
 void Camera::Render(Scene& scene) {
+  //TODO: Super sampling
+  #pragma omp parallel for
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
       Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
@@ -113,23 +90,7 @@ void Camera::Render(Scene& scene) {
   }
 }
 
-ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
-  // If object has specular component
-  if (p.get_material().get_specular() > 0.f) {
-    Direction n = glm::normalize(p.get_normal());
-    Direction d = ray.get_direction();
-
-    Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
-    Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
-    Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
-    // return p.get_material().get_specular() * Raytrace(reflection_ray, scene);
-    return p.get_material().get_specular() * Raytrace(reflection_ray, scene, depth + 1);
-  }
-  // If object has refractive component
-  if (p.get_material().get_transparence() > 0.f) {
-    return HandleRefraction(ray, p, scene, depth);
-  }
-  // Fully diffuse
+ColorDbl Camera::CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Scene& scene) {
   const std::vector<std::unique_ptr<Light>>& lights = scene.get_lights();
   ColorDbl color_accumulator = COLOR_BLACK;
   for (auto& light : lights) {
@@ -137,7 +98,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
 
     // Set dot product to zero if light is behind the surface
     Direction unit_surface_normal = glm::normalize(p.get_normal());
-    Vertex shadow_point_origin = p.get_position() + unit_surface_normal * 0.00001f;
+    Vertex shadow_point_origin = p.get_position() + unit_surface_normal * EPSILON;
 
     // Compute shadow ray
     Ray shadow_ray = Ray(shadow_point_origin, light_direction);
@@ -148,9 +109,72 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
       float l_dot_n = fmax(0.f, glm::dot(unit_light_direction, unit_surface_normal));
       color_accumulator += light->get_intensity() * light->get_color() * l_dot_n;
     }
-
   }
   return color_accumulator * p.get_material().get_color() * p.get_material().get_diffuse();
+}
+
+// TODO: move these somewhere else
+void CreateLocalCoordinateSystemForIntersectionPoint(const Direction& N, Direction& Nt, Direction& Nb) {
+  if (std::fabs(N.x) > std::fabs(N.y)) {
+    Nt = Direction(N.z, 0, -N.x) / sqrtf(N.x * N.x + N.z * N.z);
+  } else {
+    Nt = Direction(0, -N.z, N.y) / sqrtf(N.y * N.y + N.z * N.z);
+  }
+  Nb = glm::cross(N, Nt);
+}
+
+Direction UniformSampleHemisphere(const float& r1, const float& r2) {
+  // cos(theta) = u1 = y
+  // cos^2(theta) + sin^2(theta) = 1 -> sin(theta) = srtf(1 - cos^2(theta))
+  float sin_theta = sqrtf(1 - r1 * r1);
+  float phi = 2 * M_PI * r2;
+  float x = sin_theta * cosf(phi);
+  float z = sin_theta * sinf(phi);
+  return Direction(x, r1, z);
+}
+
+ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
+  // Perfect mirror
+  if (p.get_material().get_specular() > 0.f) {
+    Direction n = glm::normalize(p.get_normal());
+    Direction d = ray.get_direction();
+
+    Vertex reflection_point_origin = p.get_position() + n * EPSILON;
+    Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
+    Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
+    return Raytrace(reflection_ray, scene, depth + 1);
+  }
+  // Glass
+  if (p.get_material().get_transparence() > 0.f) { // If object has refractive component
+    return HandleRefraction(ray, p, scene, depth);
+  }
+  // Diffuse
+  Direction Nt, Nb;
+  Direction unit_normal = glm::normalize(p.get_normal());
+  CreateLocalCoordinateSystemForIntersectionPoint(unit_normal, Nt, Nb);
+  const float PDF = 1.f / (2.f * (float)M_PI);
+  ColorDbl indirect_illumination = COLOR_BLACK;
+  for (int n = 0; n < NUM_SAMPLES; n++) {
+    float r1 = distribution(generator);
+    float r2 = distribution(generator);
+    // TODO: Importance sampling
+    Direction sample_dir_local = UniformSampleHemisphere(r1, r2);
+    Direction sample_dir_world = Direction(
+        sample_dir_local.x * Nb.x + sample_dir_local.y * unit_normal.x +
+            sample_dir_local.z * Nt.x,
+        sample_dir_local.x * Nb.y + sample_dir_local.y * unit_normal.y +
+            sample_dir_local.z * Nt.y,
+        sample_dir_local.x * Nb.z + sample_dir_local.y * unit_normal.z +
+            sample_dir_local.z * Nt.z);
+    Ray sample_ray = Ray(p.get_position() + unit_normal * EPSILON, sample_dir_world);
+    // Multiply with r1 which is cos theta compenent
+    indirect_illumination = indirect_illumination + r1*Raytrace(sample_ray, scene, depth + 1);
+  }
+  // TODO: Should theoretically be divided with PDF but gives better result if it's not?
+  indirect_illumination = (indirect_illumination) / ((float)NUM_SAMPLES * PDF);
+  ColorDbl direct_illumination = CalculateDirectIllumination(ray, p, scene);
+  // Indirect illumination is multipled with 2.f according to math
+  return (direct_illumination / (float)M_PI + 2.f * indirect_illumination) * p.get_material().get_color();
 }
 
 // TODO: Refactor later
@@ -202,7 +226,6 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
   }
 }
 
-//TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
 IntersectionPoint* Camera::GetClosestIntersectionPoint(Ray& ray, Scene& scene) {
   //To make sure we update the z_buffer upon collision.
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
@@ -237,33 +260,6 @@ ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   if (intersection_point && depth < MAX_DEPTH) {
     return Shade(ray, *intersection_point, scene, depth);
   }
-  std::cout << "Ligg här och gnag... " << std::endl;
+  //std::cout << "Ligg här och gnag... " << std::endl;
   return COLOR_BLACK;
 }
-
-void Camera::CreateImage(std::string filename, const bool& normalize_intensities) {
-  //int image_rgb[ WIDTH ][ HEIGHT ][ 3 ];
-  ImageRgb image_rgb (WIDTH,std::vector<std::vector<int>>(HEIGHT,std::vector<int>(3)));
-  if (normalize_intensities) {
-    NormalizeByMaxIntensity(image_rgb);
-  } else {
-    NormalizeBySqrt(image_rgb);
-  }
-  filename = "results/" + filename + ".ppm";
-  SaveImage(filename.c_str(), image_rgb);
-}
-
-void Camera::SaveImage(const char* img_name,
-                        ImageRgb& image) {
-    FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
-    (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
-    for (int i = WIDTH-1; i >= 0; i-- ) {
-      for (int j = HEIGHT-1; j >= 0; j--) {
-        static unsigned char color[3];
-        color[0] = image[j][i][0]; // red
-        color[1] = image[j][i][1]; // green
-        color[2] = image[j][i][2]; // blue
-        (void)fwrite(color, 1, 3, fp);
-      }
-    }
-  }
