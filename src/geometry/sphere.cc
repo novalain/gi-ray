@@ -6,7 +6,7 @@ Sphere::Sphere(Vertex position, float radius, ColorDbl color)
     : SceneObject(position) {
   assert(radius > 0);
   radius_ = radius;
-  material_ = Material(0,1,0,color);
+  material_ = Material(0,1,0,color, glm::vec3(0,0,0));
 }
 
 Sphere::Sphere(Vertex position, float radius, Material material)

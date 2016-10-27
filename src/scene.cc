@@ -26,13 +26,13 @@ void Scene::InitObjects() {
   // scene_objects_.push_back(std::make_unique<Tetrahedron>(t0, t1, t2, t3));
   //scene_objects_.push_back(std::make_unique<Tetrahedron>(3.f, 3.5f, Vertex(6, -2.f,-3.5f), GLASS_MAT));
 
-  scene_objects_.push_back(std::make_unique<Triangle>(v0, v2, v1, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Triangle>(v0, v1, v3, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Triangle>(v1, v2, v3, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Triangle>(v0, v3, v2, GLASS_MAT));
+  scene_objects_.push_back(std::make_unique<Triangle>(v0, v2, v1, Material(1,0,0, COLOR_BLUE, glm::vec3(0,0,0))));
+  scene_objects_.push_back(std::make_unique<Triangle>(v0, v1, v3, Material(1,0,0, COLOR_BLUE, glm::vec3(0,0,0))));
+  scene_objects_.push_back(std::make_unique<Triangle>(v1, v2, v3, Material(1,0,0, COLOR_BLUE, glm::vec3(0,0,0))));
+  scene_objects_.push_back(std::make_unique<Triangle>(v0, v3, v2, Material(1,0,0, COLOR_BLUE, glm::vec3(0,0,0))));
 
-  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(7.f, -0.2f, 3.f), 1.0f, GLASS_MAT));
-  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(6.f, 2.5f, -2.5f), 1.5f, PERFECT_MIRROR));
+  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(6.f, -0.2f, 3.f), 1.0f, GLASS_MAT));
+  scene_objects_.push_back(std::make_unique<Sphere>(Vertex(5.f, 2.5f, -2.5f), 1.6f, PERFECT_MIRROR));
 }
 
 void Scene::InitRoom() {
@@ -55,15 +55,16 @@ void Scene::InitRoom() {
   Vertex vc6 = Vertex( 0,  6,  5);
 
   // Materials
-  Material floor_mat = Material(1,0,0, COLOR_WHITE);
-  Material ceiling_mat = Material(1,0,0, COLOR_WHITE);
-  Material wall1_mat = Material(1,0,0, COLOR_RED);
-  Material wall2a_mat = Material(1,0,0, COLOR_GREEN);
-  Material wall2b_mat = Material(0,1,0, COLOR_GREEN);
-  Material wall3_mat = Material(1,0,0, COLOR_BLUE);
-  Material wall4_mat = Material(1,0,0, COLOR_CYAN);
-  Material wall5_mat = Material(1,0,0, COLOR_MAGENTA);
-  Material wall6_mat = Material(1,0,0, COLOR_YELLOW);
+  Material floor_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
+  Material ceiling_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
+  Material wall1_mat = Material(1,0,0, COLOR_BLUE, glm::vec3(0,0,0));
+  Material wall2a_mat = Material(0,1,0, COLOR_WHITE, glm::vec3(0,0,0));
+  Material wall2b_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
+  Material wall3_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
+  Material wall4_mat = Material(1,0,0, COLOR_RED, glm::vec3(0,0,0));
+  Material wall5_mat = Material(1,0,0, COLOR_BLACK, glm::vec3(0,0,0));
+  Material wall6_mat = Material(1,0,0, COLOR_BLACK, glm::vec3(0,0,0));
+  Material area_light_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(255, 255, 255));
 
   //std::vector<Triangle> triangle_list;
 
@@ -80,7 +81,7 @@ void Scene::InitRoom() {
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc2, vc1, ceiling_mat));
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc3, vc2, ceiling_mat));
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc4, vc3, ceiling_mat));
-  scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc5, vc4, ceiling_mat));
+  scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc5, vc4, ceiling_mat  ));
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc6, vc5, ceiling_mat));
 
   /* Counter-clockwise order, starting with front */
@@ -111,5 +112,6 @@ void Scene::InitRoom() {
 }
 
 void Scene::InitLights() {
-    scene_lights_.push_back(std::make_unique<PointLight>(Vertex(2,0,4), 50.f, COLOR_WHITE));
+  scene_lights_.push_back(std::make_unique<PointLight>(Vertex(5.f,0.f,4.5f), 100.f, COLOR_WHITE));
+  scene_lights_.push_back(std::make_unique<PointLight>(Vertex(5.f,0.f,-3.5f), 100.f, COLOR_WHITE));
 }
