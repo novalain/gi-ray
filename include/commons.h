@@ -17,8 +17,8 @@ typedef glm::vec3 ColorDbl;
 #define COLOR_YELLOW  ColorDbl(255,255,  0)
 #define COLOR_PINK    ColorDbl(235, 16,255)
 
-#define PERFECT_MIRROR Material(0,1.f,0,COLOR_WHITE)
-#define GLASS_MAT Material(0,0,1.0f,COLOR_WHITE)
+#define PERFECT_MIRROR Material(0,1.f,0,COLOR_WHITE, glm::vec3(0,0,0))
+#define GLASS_MAT Material(0,0,1.0f,COLOR_WHITE, glm::vec3(0,0,0))
 
 const float REFRACTION_INDEX_AIR = 1.f;
 const float REFRACTION_INDEX_GLASS = 1.5f;

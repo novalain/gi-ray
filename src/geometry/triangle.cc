@@ -8,7 +8,7 @@ Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2) : v0_(v0), v1_(v1), v2_(v2) 
 }
 
 Triangle::Triangle(Vertex v0, Vertex v1, Vertex v2, glm::vec3 color) : v0_(v0), v1_(v1), v2_(v2) {
-  material_ = Material(0,1,0,color);
+  material_ = Material(0,1,0,color, glm::vec3(0,0,0));
   CalcNormal();
 }
 
