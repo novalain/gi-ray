@@ -81,15 +81,15 @@ void Camera::NormalizeByMaxIntensity(ImageRgb& image_rgb) {
 }
 
 void Camera::NormalizeBySqrt(ImageRgb& image_rgb) {
+  float gamma_factor_inv = 1.f/2.2f;
   for(int x = 0; x < WIDTH; x++) {
     for(int y = 0; y < HEIGHT; y++) {
-      int r = (int) sqrt(framebuffer_[x][y].get_color().x);
-      int g = (int) sqrt(framebuffer_[x][y].get_color().y);
-      int b = (int) sqrt(framebuffer_[x][y].get_color().z);
-
-      image_rgb[x][y][0] = r > 255 ? 255 : r ;
-      image_rgb[x][y][1] = g > 255 ? 255 : g ;
-      image_rgb[x][y][2] = b > 255 ? 255 : b ;
+      float r = framebuffer_[x][y].get_color().x;
+      float g = framebuffer_[x][y].get_color().y;
+      float b = framebuffer_[x][y].get_color().z;
+      image_rgb[x][y][0] = (int) 255 * pow(r < 0 ? 0 : r > 1 ? 1 : r, gamma_factor_inv);
+      image_rgb[x][y][1] = (int) 255 * pow(g < 0 ? 0 : g > 1 ? 1 : g, gamma_factor_inv);
+      image_rgb[x][y][2] = (int) 255 * pow(b < 0 ? 0 : b > 1 ? 1 : b, gamma_factor_inv);
     }
   }
 }
@@ -102,13 +102,20 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
   }
 }
 
-void Camera::Render(Scene& scene) {
+
+void Camera::Render(Scene& scene, int spp /* = 1 */) {
+  float factor = ((float)RAND_MAX) / delta_;
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
-      Vertex pixel_center = Vertex(0, i*delta_ + pixel_center_minimum_, j*delta_ + pixel_center_minimum_);
-      Ray ray = Ray(pixel_center, pixel_center - eye_pos_[pos_idx_]);
-      ColorDbl out_color = Raytrace(ray, scene, 0);
-      framebuffer_[i][j].set_color(out_color);
+      ColorDbl temp_color =  COLOR_BLACK;
+      for (int s = 0; s < spp; s++ ) {
+        float random_y = ((float)rand()) / factor-delta_ / 2;
+        float random_z = ((float)rand()) / factor-delta_ / 2;
+        Vertex pixel_center = Vertex(0, i * delta_ + pixel_center_minimum_ + random_y, j * delta_ + pixel_center_minimum_ + random_z);
+        Ray ray = Ray(pixel_center, pixel_center - eye_pos_[pos_idx_]);
+        temp_color = temp_color + Raytrace(ray, scene, 0);
+      }
+      framebuffer_[i][j].set_color(temp_color / (float)spp);
     }
   }
 }
