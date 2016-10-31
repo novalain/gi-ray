@@ -11,7 +11,7 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
-const unsigned int MAX_DEPTH = 9; // What Max depth makes sense?
+const unsigned int MAX_DEPTH = 5; // What Max depth makes sense?
 
 Camera::Camera() {
 }
@@ -104,9 +104,10 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 
 
 void Camera::Render(Scene& scene, int spp /* = 1 */) {
-  float factor = ((float)RAND_MAX) / delta_;
+  float factor = ((float)RAND_MAX) / delta_; 
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
+      //std::cout << "pixel (i, j) " << i << " , " << j << std::endl;
       ColorDbl temp_color =  COLOR_BLACK;
       for (int s = 0; s < spp; s++ ) {
         float random_y = ((float)rand()) / factor-delta_ / 2;
@@ -140,7 +141,7 @@ ColorDbl Camera::CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Sce
       color_accumulator += light->get_intensity() * light->get_color() * l_dot_n;
     }
   }
-  return color_accumulator * p.get_material().get_color() * p.get_material().get_diffuse();
+  return color_accumulator * p.get_material().get_color();
 }
 
 ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
@@ -154,10 +155,37 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
     return Raytrace(reflection_ray, scene, depth + 1);
   }
   if (p.get_material().get_transparence() > 0.f) { // If object has refractive component
-    return HandleRefraction(ray, p, scene, depth);
+    return p.get_material().get_color() * HandleRefraction(ray, p, scene, depth);
   }
-  return CalculateDirectIllumination(ray, p, scene) * p.get_material().get_color();
+
+  // Diffuse case
+  //double r1=2*M_PI*erand48(Xi), r2=erand48(Xi), r2s=sqrt(r2);
+  //Vec w=nl, u=((fabs(w.x)>.1?Vec(0,1):Vec(1))%w).norm(), v=w%u;
+  //Vec d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2)).norm();
+
+  float r1 = 2.f * (float) M_PI * (float) rand() / (float) RAND_MAX;
+  float r2 = (float)rand() / (float) RAND_MAX;
+  float r2s = sqrtf(r2);
+
+  //u=((fabs(w.x)>.1?Vec(0,1):Vec(1))%w).norm(), v=w%u;
+  Direction w = glm::normalize(p.get_normal());
+  Direction u_temp = fabs(w.x) > .1f ? Direction(0.f,1.f,0.f) : Direction(1.f,0.f,0.f);
+  Direction u = glm::normalize(glm::cross(u_temp, w));
+  Direction v = glm::cross(w, u);
+  Direction d = glm::normalize(u * (float)cos(r1) * r2s + v*(float)sin(r1) * r2s + w * sqrtf(1 - r2));
+
+  Direction n = glm::normalize(p.get_normal());
+  Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
+  Ray new_ray = Ray(reflection_point_origin, d);
+
+  float continue_ = (float) rand() / (float) RAND_MAX;
+
+  if (depth > MAX_DEPTH) {
+    return CalculateDirectIllumination(ray, p, scene);
+  }
+  return CalculateDirectIllumination(ray, p, scene) * Raytrace(new_ray, scene, depth + 1);
 }
+
 
 // TODO: Refactor later
 // Done - according to lecture4 slides
@@ -240,7 +268,7 @@ bool Camera::CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction) {
 ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   float z_buffer = FLT_MAX;
   IntersectionPoint* intersection_point = GetClosestIntersectionPoint(ray, scene);
-  if (intersection_point && depth < MAX_DEPTH) {
+  if (intersection_point) {
     return Shade(ray, *intersection_point, scene, depth);
   }
   std::cout << "Ligg här och gnag... " << std::endl;

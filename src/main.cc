@@ -19,9 +19,9 @@ int main() {
 
   cam.ChangeEyePos();
 
-  cam.Render(scene,1);
-  cam.CreateImage("max_intensity_ep2",true);
-  cam.CreateImage("sqrt_intensity_ep2",false);
+  cam.Render(scene,32);
+  cam.CreateImage("max_intensity_ep2", true);
+  cam.CreateImage("sqrt_intensity_ep2", false);
 
   double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
   std::cout << "Execution time: " << duration << std::endl;
