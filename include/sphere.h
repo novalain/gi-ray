@@ -17,7 +17,7 @@ public:
 
   float get_radius() { return radius_; }
 
-  virtual IntersectionPoint* RayIntersection(Ray& ray);
+  virtual std::unique_ptr<IntersectionPoint> RayIntersection(Ray& ray);
 
   static bool SolveQuadratic(const float& a,
                              const float& b,

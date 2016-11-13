@@ -23,7 +23,7 @@ public:
   Direction get_normal() { return normal_; }
   Material get_material() { return material_; }
 
-  IntersectionPoint* RayIntersection(Ray& ray);
+  std::unique_ptr<IntersectionPoint> RayIntersection(Ray& ray);
 
   void Print() const;
 };

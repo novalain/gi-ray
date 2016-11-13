@@ -1,7 +1,6 @@
 #include "sphere.h"
 #include "ray.h"
 #include <iostream>
-
 #include <intersection_point.h>
 
 Sphere::Sphere(Vertex position, float radius, ColorDbl color)
@@ -17,7 +16,7 @@ Sphere::Sphere(Vertex position, float radius, Material material)
   radius_ = radius;
 }
 
-IntersectionPoint* Sphere::RayIntersection(Ray& ray) {
+std::unique_ptr<IntersectionPoint>  Sphere::RayIntersection(Ray& ray) {
   Direction L = ray.get_origin() - position_;
   Direction dir = ray.get_direction();
   float radius2 = radius_ * radius_;
@@ -36,7 +35,8 @@ IntersectionPoint* Sphere::RayIntersection(Ray& ray) {
   }
   Vertex intersection_point = ray.get_origin() + ray.get_direction() * t0;
   Direction normal = intersection_point - position_;
-  return new IntersectionPoint(intersection_point, normal, material_, t0);
+  //return new IntersectionPoint(intersection_point, normal, material_, t0);
+  return std::make_unique<IntersectionPoint>(intersection_point, normal, material_, t0);
 }
 
 bool Sphere::SolveQuadratic(const float& a,

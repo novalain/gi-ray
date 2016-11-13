@@ -2,6 +2,8 @@
 #define SCENE_OBJECT_H
 
 #include "commons.h"
+#include "intersection_point.h"
+#include <memory>
 
 class Ray;
 class IntersectionPoint;
@@ -9,7 +11,7 @@ class IntersectionPoint;
 class SceneObject {
 public:
   virtual ~SceneObject() = default;
-  virtual IntersectionPoint* RayIntersection(Ray& ray) = 0;
+  virtual std::unique_ptr<IntersectionPoint> RayIntersection(Ray& ray) = 0;
 
   Vertex get_position() { return position_; }
 

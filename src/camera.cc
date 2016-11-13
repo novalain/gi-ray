@@ -235,16 +235,16 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
 }
 
 //TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
-IntersectionPoint* Camera::GetClosestIntersectionPoint(Ray& ray, Scene& scene) {
+std::unique_ptr<IntersectionPoint> Camera::GetClosestIntersectionPoint(Ray& ray, Scene& scene) {
   //To make sure we update the z_buffer upon collision.
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
-  IntersectionPoint* return_point;
+  std::unique_ptr<IntersectionPoint> return_point;
   float z_buffer = FLT_MAX;
   for (auto& object : objects) {
-    IntersectionPoint* p = object->RayIntersection(ray);
+    std::unique_ptr<IntersectionPoint> p = object->RayIntersection(ray);
     if (p && p->get_z() < z_buffer) {
       z_buffer = p->get_z();
-      return_point = p;
+      return_point = std::move(p);
     }
   }
   return return_point;
@@ -254,7 +254,7 @@ bool Camera::CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction) {
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
   float z_buffer = FLT_MAX;
   for (auto& object : objects) {
-    IntersectionPoint* p = object->RayIntersection(ray);
+    std::unique_ptr<IntersectionPoint> p = object->RayIntersection(ray);
     if (p && p->get_z() < glm::length(light_direction) &&
         p->get_material().get_transparence() == 0.f) {
       return true;
@@ -265,7 +265,7 @@ bool Camera::CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction) {
 
 ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   float z_buffer = FLT_MAX;
-  IntersectionPoint* intersection_point = GetClosestIntersectionPoint(ray, scene);
+  std::unique_ptr<IntersectionPoint> intersection_point = GetClosestIntersectionPoint(ray, scene);
   if (intersection_point) {
     return Shade(ray, *intersection_point, scene, depth);
   }
