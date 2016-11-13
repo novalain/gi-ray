@@ -2,6 +2,8 @@
 #include "ray.h"
 #include <iostream>
 
+#include <intersection_point.h>
+
 Sphere::Sphere(Vertex position, float radius, ColorDbl color)
     : SceneObject(position) {
   assert(radius > 0);

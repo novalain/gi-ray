@@ -5,6 +5,7 @@
 // TODO: Remove when we have all point lights in vector
 #include "point_light.h"
 #include <iostream>
+#include <random>
 
 // TODO: Place these somewhere that makes the most sense and remove some?
 const float EPSILON = 0.00001f;
@@ -12,6 +13,9 @@ const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
 const unsigned int MAX_DEPTH = 5; // What Max depth makes sense?
+
+std::default_random_engine generator;
+std::uniform_real_distribution<float> distribution(0, 1);
 
 Camera::Camera() {
 }
@@ -81,7 +85,7 @@ void Camera::NormalizeByMaxIntensity(ImageRgb& image_rgb) {
 }
 
 void Camera::NormalizeBySqrt(ImageRgb& image_rgb) {
-  float gamma_factor_inv = 1.f/2.2f;
+  float gamma_factor_inv = 1.f/3.2f;
   for(int x = 0; x < WIDTH; x++) {
     for(int y = 0; y < HEIGHT; y++) {
       float r = framebuffer_[x][y].get_color().x;
@@ -104,14 +108,15 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 
 
 void Camera::Render(Scene& scene, int spp /* = 1 */) {
-  float factor = ((float)RAND_MAX) / delta_; 
+  float factor = ((float)RAND_MAX) / delta_;
+  #pragma omp parallel for
   for (int i = 0; i < WIDTH; i++) {
     for (int j = 0; j < HEIGHT; j++) {
       //std::cout << "pixel (i, j) " << i << " , " << j << std::endl;
       ColorDbl temp_color =  COLOR_BLACK;
       for (int s = 0; s < spp; s++ ) {
-        float random_y = ((float)rand()) / factor-delta_ / 2;
-        float random_z = ((float)rand()) / factor-delta_ / 2;
+        float random_y = distribution(generator) * delta_ - (delta_ / 2.f);
+        float random_z = distribution(generator) * delta_ - (delta_ / 2.f);
         Vertex pixel_center = Vertex(0, i * delta_ + pixel_center_minimum_ + random_y, j * delta_ + pixel_center_minimum_ + random_z);
         Ray ray = Ray(pixel_center, pixel_center - eye_pos_[pos_idx_]);
         temp_color = temp_color + Raytrace(ray, scene, 0);
@@ -145,6 +150,10 @@ ColorDbl Camera::CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Sce
 }
 
 ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
+
+  if (depth > MAX_DEPTH) {
+    return  CalculateDirectIllumination(ray, p, scene);
+  }
   if (p.get_material().get_specular() > 0.f) {
     Direction n = glm::normalize(p.get_normal());
     Direction d = ray.get_direction();
@@ -158,16 +167,10 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
     return p.get_material().get_color() * HandleRefraction(ray, p, scene, depth);
   }
 
-  // Diffuse case
-  //double r1=2*M_PI*erand48(Xi), r2=erand48(Xi), r2s=sqrt(r2);
-  //Vec w=nl, u=((fabs(w.x)>.1?Vec(0,1):Vec(1))%w).norm(), v=w%u;
-  //Vec d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2)).norm();
-
-  float r1 = 2.f * (float) M_PI * (float) rand() / (float) RAND_MAX;
-  float r2 = (float)rand() / (float) RAND_MAX;
+  float r1 = 2.f * (float) M_PI * distribution(generator);
+  float r2 = distribution(generator);
   float r2s = sqrtf(r2);
 
-  //u=((fabs(w.x)>.1?Vec(0,1):Vec(1))%w).norm(), v=w%u;
   Direction w = glm::normalize(p.get_normal());
   Direction u_temp = fabs(w.x) > .1f ? Direction(0.f,1.f,0.f) : Direction(1.f,0.f,0.f);
   Direction u = glm::normalize(glm::cross(u_temp, w));
@@ -178,11 +181,6 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
   Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
   Ray new_ray = Ray(reflection_point_origin, d);
 
-  float continue_ = (float) rand() / (float) RAND_MAX;
-
-  if (depth > MAX_DEPTH) {
-    return CalculateDirectIllumination(ray, p, scene);
-  }
   return CalculateDirectIllumination(ray, p, scene) * Raytrace(new_ray, scene, depth + 1);
 }
 
@@ -214,7 +212,7 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
 
     if ( alpha > CRITICAL_ANGLE ) { // if total inner reflection
       Vertex inner_reflection_ray_origin = p.get_position() + n * EPSILON;
-      Direction reflection_direction = I - 2*(glm::dot(I, n))*n;
+      Direction reflection_direction = I - 2.f*(glm::dot(I, n))*n;
       Ray total_inner_reflection_ray = Ray(inner_reflection_ray_origin, reflection_direction);
       total_inner_reflection_ray.set_refraction_status(true);
       return p.get_material().get_transparence() * Raytrace(total_inner_reflection_ray, scene, depth + 1);
@@ -224,7 +222,7 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
     }
     // else exiting glass object!
     Direction T = REFRACTION_FACTOR_IO * I - n*(-REFRACTION_FACTOR_IO*I_dot_n +
-        sqrtf(1 - REFRACTION_FACTOR_IO*REFRACTION_FACTOR_IO * (1 - I_dot_n*I_dot_n)));
+        sqrtf(1.f - REFRACTION_FACTOR_IO*REFRACTION_FACTOR_IO * (1.f - I_dot_n*I_dot_n)));
     // TODO: this can probably be removed, but might be annoying to debug if wrong
     if ( 1.0f - glm::length(T) > EPSILON ) {
       std::cerr << "THIS SHOULD NOT BE PRINTED! Length of T = " << glm::length(T) << std::endl;

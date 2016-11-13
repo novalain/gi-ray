@@ -19,7 +19,7 @@ int main() {
 
   cam.ChangeEyePos();
 
-  cam.Render(scene,32);
+  cam.Render(scene, 32);
   cam.CreateImage("max_intensity_ep2", true);
   cam.CreateImage("sqrt_intensity_ep2", false);
 
