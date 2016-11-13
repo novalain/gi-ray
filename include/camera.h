@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "commons.h"
+#include <memory>
 #include "pixel.h"
 #include "intersection_point.h"
 
@@ -59,7 +60,7 @@ private:
   ColorDbl Raytrace(Ray& ray, Scene& scene, unsigned int depth);
   ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
   ColorDbl CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Scene& scene);
-  IntersectionPoint* GetClosestIntersectionPoint(Ray& ray, Scene& scene);
+  std::unique_ptr<IntersectionPoint> GetClosestIntersectionPoint(Ray& ray, Scene& scene);
   bool CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction);
  public:
   Camera();

@@ -14,7 +14,7 @@ public:
   PointLight(Vertex position, float intensity);
   PointLight(Vertex position, float intensity, ColorDbl color);
 
-  virtual IntersectionPoint* RayIntersection(Ray& ray) {
+  virtual std::unique_ptr<IntersectionPoint> RayIntersection(Ray& ray) {
     return nullptr; // a ray cannot hit a point of zero area
   }
 };
