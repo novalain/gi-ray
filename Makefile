@@ -17,7 +17,7 @@ travistests:
 	$(CXX) $(compall) #-Wall
 
 allinone:
-	$(CC) $(compall) -o $(execfile) #-Wall
+	$(CC) $(compall) -fopenmp -o $(execfile) #-Wall
 
 raytracer: $(bld)main.o
 	$(CC) $(flags) $(bld)intersection_point.o $(bld)material.o $(bld)point_light.o $(bld)sphere.o $(bld)tetrahedron.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall

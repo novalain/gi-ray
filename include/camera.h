@@ -18,8 +18,8 @@
   TODO: We might want to declare this array on the heap
   (no restrictions on size except when RAM is filled up)
 */
-#define WIDTH 100
-#define HEIGHT 100
+#define WIDTH 250
+#define HEIGHT 250
 
 typedef std::vector<std::vector<std::vector<int>>> ImageRgb;
 typedef std::vector<std::vector<Pixel>> Framebuffer;

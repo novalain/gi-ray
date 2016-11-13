@@ -2,8 +2,6 @@
 #define RAY_H
 
 #include "commons.h"
-// TODO: Can't forward declare due to destructor, make smart pointer
-#include "intersection_point.h"
 
 class Ray {
 private:
