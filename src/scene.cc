@@ -81,7 +81,7 @@ void Scene::InitRoom() {
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc2, vc1, ceiling_mat));
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc3, vc2, ceiling_mat));
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc4, vc3, ceiling_mat));
-  scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc5, vc4, ceiling_mat  ));
+  scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc5, vc4, ceiling_mat));
   scene_objects_.push_back(std::make_unique<Triangle>(vcC, vc6, vc5, ceiling_mat));
 
   /* Counter-clockwise order, starting with front */

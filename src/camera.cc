@@ -85,7 +85,7 @@ void Camera::NormalizeByMaxIntensity(ImageRgb& image_rgb) {
 }
 
 void Camera::NormalizeBySqrt(ImageRgb& image_rgb) {
-  float gamma_factor_inv = 1.f/3.2f;
+  float gamma_factor_inv = 1.f/5.2f;
   for(int x = 0; x < WIDTH; x++) {
     for(int y = 0; y < HEIGHT; y++) {
       float r = framebuffer_[x][y].get_color().x;
@@ -108,9 +108,12 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 
 
 void Camera::Render(Scene& scene, int spp /* = 1 */) {
+  //fprintf(stderr, "\nRendering.. %d sampels per pixel", spp);
+  std::cout << "Rendering.. " << std::endl << spp << " spp" << std::endl;
   float factor = ((float)RAND_MAX) / delta_;
-  #pragma omp parallel for
+  #pragma omp parallel for schedule(dynamic, 1)
   for (int i = 0; i < WIDTH; i++) {
+    fprintf(stderr, "\rProgress:  %1.2f%%", 100.*i/(WIDTH-1));
     for (int j = 0; j < HEIGHT; j++) {
       //std::cout << "pixel (i, j) " << i << " , " << j << std::endl;
       ColorDbl temp_color =  COLOR_BLACK;
@@ -269,7 +272,7 @@ ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   if (intersection_point) {
     return Shade(ray, *intersection_point, scene, depth);
   }
-  std::cout << "Ligg här och gnag... " << std::endl;
+  std::cout << "\nLigg här och gnag... " << std::endl;
   return COLOR_BLACK;
 }
 

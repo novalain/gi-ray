@@ -4,9 +4,12 @@ include=-I./include/
 geo=./src/geometry/
 bin=./bin/
 bld=./build/
-flags=-std=c++14
+flags=-std=c++14 -fopenmp
+#Test server doens't support multithreading
+flagstravis=-std=c++14
 execfile=$(bin)GI-Ray
 compall=$(flags) $(src)main.cc $(src)intersection_point.cc $(src)material.cc $(geo)sphere.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(src)point_light.cc $(include)
+compalltravis=$(flagstravis) $(src)main.cc $(src)intersection_point.cc $(src)material.cc $(geo)sphere.cc $(geo)tetrahedron.cc $(src)scene.cc $(src)camera.cc $(geo)triangle.cc $(src)ray.cc $(src)point_light.cc $(include)
 
 #CFLAGS= -c -Wall
 #WARNINGS = -Wall
@@ -14,10 +17,10 @@ compall=$(flags) $(src)main.cc $(src)intersection_point.cc $(src)material.cc $(g
 all: raytracer #allinone
 
 travistests:
-	$(CXX) $(compall) #-Wall
+	$(CXX) $(compalltravis) #-Wall
 
 allinone:
-	$(CC) $(compall) -fopenmp -o $(execfile) #-Wall
+	$(CC) $(compall) -o $(execfile) #-Wall
 
 raytracer: $(bld)main.o
 	$(CC) $(flags) $(bld)intersection_point.o $(bld)material.o $(bld)point_light.o $(bld)sphere.o $(bld)tetrahedron.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
