@@ -35,7 +35,6 @@ std::unique_ptr<IntersectionPoint>  Sphere::RayIntersection(Ray& ray) {
   }
   Vertex intersection_point = ray.get_origin() + ray.get_direction() * t0;
   Direction normal = intersection_point - position_;
-  //return new IntersectionPoint(intersection_point, normal, material_, t0);
   return std::make_unique<IntersectionPoint>(intersection_point, normal, material_, t0);
 }
 
