@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 #include "camera.h"
 #include "ray.h"
 #include "scene.h"
