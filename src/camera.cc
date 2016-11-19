@@ -6,6 +6,7 @@
 // TODO: Remove when we have all point lights in vector
 #include "point_light.h"
 #include <iostream>
+#include <sstream>
 #include <random>
 
 // TODO: Place these somewhere that makes the most sense and remove some?
@@ -14,12 +15,10 @@ const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
 const unsigned int MAX_DEPTH = 5; // What Max depth makes sense?
+float gamma_factor = 3.6f;
 
 std::default_random_engine generator;
 std::uniform_real_distribution<float> distribution(0, 1);
-
-Camera::Camera() {
-}
 
 Camera::Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction up_vector) :
     direction_(direction), up_vector_(up_vector), framebuffer_(WIDTH, std::vector<Pixel>(HEIGHT)) {
@@ -86,7 +85,7 @@ void Camera::NormalizeByMaxIntensity(ImageRgb& image_rgb) {
 }
 
 void Camera::NormalizeBySqrt(ImageRgb& image_rgb) {
-  float gamma_factor_inv = 1.f/5.2f;
+  float gamma_factor_inv = 1.f / gamma_factor;
   for(int x = 0; x < WIDTH; x++) {
     for(int y = 0; y < HEIGHT; y++) {
       float r = framebuffer_[x][y].get_color().x;
@@ -110,11 +109,11 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 
 void Camera::Render(Scene& scene, int spp /* = 1 */) {
   //fprintf(stderr, "\nRendering.. %d sampels per pixel", spp);
-  std::cout << "Rendering.. " << std::endl << spp << " spp" << std::endl;
+  //std::cout << "Rendering.. " << std::endl << spp << " spp" << std::endl;
   float factor = ((float)RAND_MAX) / delta_;
   #pragma omp parallel for schedule(dynamic, 1)
   for (int i = 0; i < WIDTH; i++) {
-    fprintf(stderr, "\rProgress:  %1.2f%%", 100.*i/(WIDTH-1));
+    fprintf(stderr, "{\r\tProgress:  %1.2f%%", 100.*i/(WIDTH-1));
     for (int j = 0; j < HEIGHT; j++) {
       //std::cout << "pixel (i, j) " << i << " , " << j << std::endl;
       ColorDbl temp_color =  COLOR_BLACK;
@@ -278,14 +277,18 @@ ColorDbl Camera::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
 }
 
 void Camera::CreateImage(std::string filename, const bool& normalize_intensities) {
-  //int image_rgb[ WIDTH ][ HEIGHT ][ 3 ];
   ImageRgb image_rgb (WIDTH,std::vector<std::vector<int>>(HEIGHT,std::vector<int>(3)));
+  filename = "results/" + filename + "_" + std::to_string(WIDTH) + "x" + std::to_string(HEIGHT);
   if (normalize_intensities) {
     NormalizeByMaxIntensity(image_rgb);
   } else {
     NormalizeBySqrt(image_rgb);
+    std::stringstream ss;
+    ss << gamma_factor;
+    ss.precision(2);
+    filename += "_gamma" + ss.str();
   }
-  filename = "results/" + filename + ".ppm";
+  filename = filename + ".ppm";
   SaveImage(filename.c_str(), image_rgb);
 }
 
