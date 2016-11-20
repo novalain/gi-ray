@@ -4,7 +4,7 @@ include=-I./include/
 geo=./src/geometry/
 bin=./bin/
 bld=./build/
-flags=-std=c++14 -openmp
+flags=-std=c++14 -fopenmp
 #Test server doens't support multithreading
 flagstravis=-std=c++14
 execfile=$(bin)GI-Ray
