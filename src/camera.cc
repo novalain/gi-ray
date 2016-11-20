@@ -1,4 +1,4 @@
-#define _USE_MATH_DEFINES // Needed to run in windows/visual studio
+//#define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 #include "camera.h"
 #include "ray.h"
 #include "scene.h"
@@ -14,8 +14,10 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
+const float M_PI = 3.14159265f;
 const unsigned int MAX_DEPTH = 5; // What Max depth makes sense?
 float gamma_factor = 3.6f;
+bool has_hit_diffuse; // TODO remove this when proper importance is implemented
 
 std::default_random_engine generator;
 std::uniform_real_distribution<float> distribution(0, 1);
@@ -26,10 +28,10 @@ Camera::Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction 
   eye_pos_[0] = eye_pos1;
   eye_pos_[1] = eye_pos2;
 
-  camera_plane_[0] = Vertex(0,-1,-1);
-  camera_plane_[1] = Vertex(0,1,-1);
-  camera_plane_[2] = Vertex(0,1,1);
-  camera_plane_[3] = Vertex(0,-1,1);
+  camera_plane_[0] = Vertex(0.f,-1.f,-1.f);
+  camera_plane_[1] = Vertex(0.f, 1.f,-1.f);
+  camera_plane_[2] = Vertex(0.f, 1.f, 1.f);
+  camera_plane_[3] = Vertex(0.f,-1.f, 1.f);
 
   delta_ = (camera_plane_[1].y - camera_plane_[0].y)/WIDTH;
   pixel_center_minimum_ = camera_plane_[0].y + delta_/2;
@@ -111,15 +113,17 @@ void Camera::Render(Scene& scene, int spp /* = 1 */) {
   //fprintf(stderr, "\nRendering.. %d sampels per pixel", spp);
   //std::cout << "Rendering.. " << std::endl << spp << " spp" << std::endl;
   float factor = ((float)RAND_MAX) / delta_;
+  float delta2 = delta_ - (delta_ / 2.f);
   #pragma omp parallel for schedule(dynamic, 1)
   for (int i = 0; i < WIDTH; i++) {
-    fprintf(stderr, "{\r\tProgress:  %1.2f%%", 100.*i/(WIDTH-1));
+    fprintf(stderr, "\r\tProgress:  %1.2f%%", 100.*i/(WIDTH-1));
     for (int j = 0; j < HEIGHT; j++) {
       //std::cout << "pixel (i, j) " << i << " , " << j << std::endl;
       ColorDbl temp_color =  COLOR_BLACK;
       for (int s = 0; s < spp; s++ ) {
-        float random_y = distribution(generator) * delta_ - (delta_ / 2.f);
-        float random_z = distribution(generator) * delta_ - (delta_ / 2.f);
+        float random_y = distribution(generator) * delta2;
+        float random_z = distribution(generator) * delta2;
+        has_hit_diffuse = false; // TODO remove this when importance is implemented
         Vertex pixel_center = Vertex(0, i * delta_ + pixel_center_minimum_ + random_y, j * delta_ + pixel_center_minimum_ + random_z);
         Ray ray = Ray(pixel_center, pixel_center - eye_pos_[pos_idx_]);
         temp_color = temp_color + Raytrace(ray, scene, 0);
@@ -169,12 +173,18 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
   if (p.get_material().get_transparence() > 0.f) { // If object has refractive component
     return p.get_material().get_color() * HandleRefraction(ray, p, scene, depth);
   }
-
-  float r1 = 2.f * (float) M_PI * distribution(generator);
+  //TODO STOP ON SECOND DIFFUSE
+  //TODO INCLUDE DISTANCE IMPORTANCE FOR DIFFUSE-DIFFUSE collisions
+  if (has_hit_diffuse) {
+    return CalculateDirectIllumination(ray, p, scene);
+  }
+  has_hit_diffuse = true;
+  float r1 = 2.f * (float)M_PI * distribution(generator);
   float r2 = distribution(generator);
   float r2s = sqrtf(r2);
 
   Direction w = glm::normalize(p.get_normal());
+  //TODO: u_temp, u and v can be optimized
   Direction u_temp = fabs(w.x) > .1f ? Direction(0.f,1.f,0.f) : Direction(1.f,0.f,0.f);
   Direction u = glm::normalize(glm::cross(u_temp, w));
   Direction v = glm::cross(w, u);
@@ -184,6 +194,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
   Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
   Ray new_ray = Ray(reflection_point_origin, d);
 
+  //TODO why are we multiplying here? Shouldn't it be addition?
   return CalculateDirectIllumination(ray, p, scene) * Raytrace(new_ray, scene, depth + 1);
 }
 
@@ -237,11 +248,11 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
   }
 }
 
-//TODO: Change this to GetCLosestIntersectionPoint when we start the ray bouncing??
 std::unique_ptr<IntersectionPoint> Camera::GetClosestIntersectionPoint(Ray& ray, Scene& scene) {
-  //To make sure we update the z_buffer upon collision.
   const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
   std::unique_ptr<IntersectionPoint> return_point;
+
+  //To make sure we update the z_buffer upon collision.
   float z_buffer = FLT_MAX;
   for (auto& object : objects) {
     std::unique_ptr<IntersectionPoint> p = object->RayIntersection(ray);
