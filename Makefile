@@ -4,7 +4,7 @@ include=-I./include/
 geo=./src/geometry/
 bin=./bin/
 bld=./build/
-flags=-std=c++14 -fopenmp
+flags=-std=c++14 -openmp
 #Test server doens't support multithreading
 flagstravis=-std=c++14
 execfile=$(bin)GI-Ray
@@ -23,9 +23,9 @@ allinone:
 	$(CC) $(compall) -o $(execfile) #-Wall
 
 raytracer: $(bld)main.o
-	$(CC) $(flags) $(bld)intersection_point.o $(bld)material.o $(bld)point_light.o $(bld)sphere.o $(bld)tetrahedron.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
+	$(CC) $(flags) $(bld)intersection_point.o $(bld)material.o $(bld)point_light.o $(bld)sphere.o $(bld)tetrahedron.o $(bld)main.o $(bld)scene.o $(bld)camera.o $(bld)raytracer.o $(bld)triangle.o $(bld)ray.o $(bld)pixel.o -o $(execfile) #-v -Wall
 
-$(bld)main.o: $(src)main.cc $(bld)intersection_point.o $(bld)material.o $(bld)camera.o $(bld)sphere.o $(bld)ray.o $(bld)scene.o $(bld)tetrahedron.o $(bld)point_light.o
+$(bld)main.o: $(src)main.cc $(bld)intersection_point.o $(bld)material.o $(bld)camera.o $(bld)raytracer.o $(bld)sphere.o $(bld)ray.o $(bld)scene.o $(bld)tetrahedron.o $(bld)point_light.o
 	$(CC) $(flags) $(include) -o $(bld)main.o -c $(src)main.cc
 
 $(bld)intersection_point.o:	$(src)intersection_point.cc
@@ -34,8 +34,11 @@ $(bld)intersection_point.o:	$(src)intersection_point.cc
 $(bld)material.o:	$(src)material.cc
 	$(CC) $(flags) $(include) -o $(bld)material.o -c $(src)material.cc
 
-$(bld)camera.o: $(src)camera.cc $(bld)pixel.o
+$(bld)camera.o: $(src)camera.cc $(bld)pixel.o $(bld)raytracer.o
 	$(CC) $(flags) $(include) -o $(bld)camera.o -c $(src)camera.cc
+
+$(bld)raytracer.o: $(src)raytracer.cc  $(bld)ray.o
+	$(CC) $(flags) $(include) -o $(bld)raytracer.o -c $(src)raytracer.cc
 
 $(bld)triangle.o: $(geo)triangle.cc $(src)material.cc
 	$(CC) $(flags) $(include) -o $(bld)triangle.o -c $(geo)triangle.cc
