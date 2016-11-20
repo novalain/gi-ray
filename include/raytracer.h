@@ -14,8 +14,9 @@ class Scene;
 
 class Raytracer {
 private:
+  ColorDbl HandleDiffuse(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
+  ColorDbl HandleSpecular(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
   ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
-  ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
   ColorDbl CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Scene& scene);
   std::unique_ptr<IntersectionPoint> GetClosestIntersectionPoint(Ray& ray, Scene& scene);
   bool CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction);

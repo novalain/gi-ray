@@ -42,49 +42,45 @@ ColorDbl Raytracer::CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, 
   return color_accumulator * p.get_material().get_color();
 }
 
-ColorDbl Raytracer::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
-  if (depth > MAX_DEPTH || ray.get_importance() < 0.05) {
-    return CalculateDirectIllumination(ray, p, scene);
-  }
-  if (p.get_material().get_specular() > 0.f) {
-    Direction n = glm::normalize(p.get_normal());
-    Direction d = ray.get_direction();
-
-    Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
-    Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
-    Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
-    reflection_ray.has_hit_diffuse = ray.has_hit_diffuse;
-    return Raytrace(reflection_ray, scene, depth + 1);
-  }
-  if (p.get_material().get_transparence() > 0.f) { // If object has refractive component
-    return p.get_material().get_color() * HandleRefraction(ray, p, scene, depth);
-  }
+ColorDbl Raytracer::HandleDiffuse(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
 
   //STOP ON SECOND DIFFUSE HIT
   if (ray.has_hit_diffuse) {
     return CalculateDirectIllumination(ray, p, scene);
   }
   ray.has_hit_diffuse = true;
-  float r1 = 2.f * (float)M_PI * distribution2(generator2);
+  Direction w = glm::normalize(p.get_normal()); // TODO: this should not have to be normalized here, it should already be normalized!!
+  // Generalized formula for finding tangent u given a unit length normal vector w
+  Direction u = glm::normalize(glm::cross(fabs(w.x) > .1f ? Direction(0.f, 1.f, 0.f) : Direction(1.f, 0.f, 0.f), w));
+  Direction v = glm::cross(w, u);
+
+  // Random direction d within hemisphere
+  // Random angle
+  float r1 = PI2 * distribution2(generator2);
+  // Random distance from center
   float r2 = distribution2(generator2);
   float r2s = sqrtf(r2);
-
-  Direction w = glm::normalize(p.get_normal());
-  //TODO: u_temp, u and v can be optimized
-  Direction u_temp = fabs(w.x) > .1f ? Direction(0.f,1.f,0.f) : Direction(1.f,0.f,0.f);
-  Direction u = glm::normalize(glm::cross(u_temp, w));
-  Direction v = glm::cross(w, u);
   Direction d = glm::normalize(u * (float)cos(r1) * r2s + v*(float)sin(r1) * r2s + w * sqrtf(1 - r2));
 
-  Direction n = glm::normalize(p.get_normal());
-  Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
-  Ray new_ray = Ray(reflection_point_origin, d);
+  Vertex reflection_point_origin = p.get_position() + w * 0.00001f;
+  Ray new_ray = Ray(reflection_point_origin, d, 0.2f * p.get_material().get_diffuse());
   new_ray.has_hit_diffuse = ray.has_hit_diffuse;
 
   //TODO why are we multiplying here? Shouldn't it be addition?
   return CalculateDirectIllumination(ray, p, scene) * Raytrace(new_ray, scene, depth + 1);
 }
 
+
+ColorDbl Raytracer::HandleSpecular(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth) {
+  Direction n = glm::normalize(p.get_normal());
+  Direction d = ray.get_direction();
+
+  Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
+  Direction reflection_direction = d - 2 * (glm::dot(d, n))*n;
+  Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
+  reflection_ray.has_hit_diffuse = ray.has_hit_diffuse;
+  return Raytrace(reflection_ray, scene, depth + 1);
+}
 
 // TODO: Refactor later
 // Done - according to lecture4 slides
@@ -185,9 +181,21 @@ bool Raytracer::CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction
 
 ColorDbl Raytracer::Raytrace(Ray& ray, Scene& scene, unsigned int depth) {
   float z_buffer = FLT_MAX;
-  std::unique_ptr<IntersectionPoint> intersection_point = GetClosestIntersectionPoint(ray, scene);
-  if (intersection_point) {
-    return Shade(ray, *intersection_point, scene, depth);
+  std::unique_ptr<IntersectionPoint> p = GetClosestIntersectionPoint(ray, scene);
+  if (p) {
+    if (depth > MAX_DEPTH) {
+      return CalculateDirectIllumination(ray, *p, scene);
+    }
+    if (p->get_material().get_specular() > 0.f) {
+      return HandleSpecular(ray, *p, scene, depth);
+    }
+    if (p->get_material().get_transparence() > 0.f) { // If object has refractive component
+      return p->get_material().get_color() * HandleRefraction(ray, *p, scene, depth);
+    }
+    if (p->get_material().get_diffuse() > 0.f) {
+      return HandleDiffuse(ray, *p, scene, depth);
+    }
+    //return ray.importance * (intersection_point->get_material().get_emission() + Shade(ray, *intersection_point, scene, depth));
   }
   std::cerr << "\nLigg här och gnag... " << std::endl;
   return COLOR_BLACK;
