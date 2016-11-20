@@ -1,7 +1,6 @@
 #define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 #include "raytracer.h"
 #include "scene.h"
-#include "scene_object.h"
 // TODO: Remove when we have all point lights in vector
 #include "point_light.h"
 #include <random>
@@ -13,7 +12,7 @@ const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
 const unsigned int MAX_DEPTH = 10; // What Max depth makes sense?
-const float gamma_factor = 3.6f;
+const float PI2 =(float) M_PI * 2.f;
 
 std::default_random_engine generator2;
 std::uniform_real_distribution<float> distribution2(0, 1);
@@ -140,12 +139,20 @@ ColorDbl Raytracer::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scen
 }
 
 std::unique_ptr<IntersectionPoint> Raytracer::GetClosestIntersectionPoint(Ray& ray, Scene& scene) {
-  const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+  const std::vector<std::unique_ptr<Triangle>>& triangles = scene.get_triangles();
+  const std::vector<std::unique_ptr<Sphere>>& spheres = scene.get_spheres();
   std::unique_ptr<IntersectionPoint> return_point;
 
   //To make sure we update the z_buffer upon collision.
   float z_buffer = FLT_MAX;
-  for (auto& object : objects) {
+  for (auto& object : triangles) {
+    std::unique_ptr<IntersectionPoint> p = object->RayIntersection(ray);
+    if (p && p->get_z() < z_buffer) {
+      z_buffer = p->get_z();
+      return_point = std::move(p);
+    }
+  }
+  for (auto& object : spheres) {
     std::unique_ptr<IntersectionPoint> p = object->RayIntersection(ray);
     if (p && p->get_z() < z_buffer) {
       z_buffer = p->get_z();
@@ -156,12 +163,20 @@ std::unique_ptr<IntersectionPoint> Raytracer::GetClosestIntersectionPoint(Ray& r
 }
 
 bool Raytracer::CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction) {
-  const std::vector<std::unique_ptr<SceneObject>>& objects = scene.get_objects();
+  const std::vector<std::unique_ptr<Triangle>>& triangles = scene.get_triangles();
+  const std::vector<std::unique_ptr<Sphere>>& spheres = scene.get_spheres();
   float z_buffer = FLT_MAX;
-  for (auto& object : objects) {
+  for (auto& object : triangles) {
     std::unique_ptr<IntersectionPoint> p = object->RayIntersection(ray);
     if (p && p->get_z() < glm::length(light_direction) &&
         p->get_material().get_transparence() == 0.f) {
+      return true;
+    }
+  }
+  for (auto& object : spheres) {
+    std::unique_ptr<IntersectionPoint> p = object->RayIntersection(ray);
+    if (p && p->get_z() < glm::length(light_direction) &&
+      p->get_material().get_transparence() == 0.f) {
       return true;
     }
   }

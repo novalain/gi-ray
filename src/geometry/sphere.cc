@@ -4,14 +4,14 @@
 #include <intersection_point.h>
 
 Sphere::Sphere(Vertex position, float radius, ColorDbl color)
-    : SceneObject(position) {
+    : position_(position) {
   assert(radius > 0);
   radius_ = radius;
   material_ = Material(0,1,0,color, glm::vec3(0,0,0));
 }
 
 Sphere::Sphere(Vertex position, float radius, Material material)
-    : SceneObject(position), material_(material) {
+    : position_(position), material_(material) {
   assert(radius > 0);
   radius_ = radius;
 }
@@ -47,9 +47,9 @@ bool Sphere::SolveQuadratic(const float& a,
   if (discr < 0) {
     return false;
   } else if (discr == 0) {
-    x0 = x1 = -0.5 * b / a;
+    x0 = x1 = -0.5f * b / a;
   } else {
-    float q = (b > 0) ? -0.5 * (b + sqrt(discr)) : -0.5 * (b - sqrt(discr));
+    float q = (b > 0) ? -0.5f * (b + sqrt(discr)) : -0.5f * (b - sqrt(discr));
     x0 = q / a;
     x1 = c / q;
   }

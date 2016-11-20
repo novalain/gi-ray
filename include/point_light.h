@@ -1,10 +1,12 @@
 #ifndef POINT_LIGHT_H
 #define POINT_LIGHT_H
 
+#include <memory>
 #include "commons.h"
 #include "light.h"
+#include "intersection_point.h"
 
-class IntersectionPoint;
+class Ray;
 
 class PointLight : public Light {
 protected:
@@ -14,7 +16,7 @@ public:
   PointLight(Vertex position, float intensity);
   PointLight(Vertex position, float intensity, ColorDbl color);
 
-  virtual std::unique_ptr<IntersectionPoint> RayIntersection(Ray& ray) {
+  std::unique_ptr<IntersectionPoint> RayIntersection(Ray& ray) {
     return nullptr; // a ray cannot hit a point of zero area
   }
 };

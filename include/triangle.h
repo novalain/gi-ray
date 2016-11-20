@@ -1,12 +1,13 @@
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
 
+#include <memory>
 #include "commons.h"
 #include "ray.h"
 #include "material.h"
-#include "scene_object.h"
+#include "intersection_point.h"
 
-class Triangle : public SceneObject {
+class Triangle {
 private:
   Vertex v0_, v1_, v2_;
 
