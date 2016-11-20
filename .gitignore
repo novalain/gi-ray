@@ -1,4 +1,12 @@
 .DS_Store
 bin
 build
-results
+
+#Visual Studio related
+.vs/
+Debug/
+Release/
+x64/
+*.VC*
+*.sln
+*.vcxproj

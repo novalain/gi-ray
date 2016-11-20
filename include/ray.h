@@ -11,6 +11,8 @@ private:
   bool is_inside_object = false; // if inside an object
 
 public:
+  float importance;
+  bool has_hit_diffuse = false;
   Ray(Vertex origin, Direction direction) : origin_(origin),
       direction_(glm::normalize(direction)), importance_(1.0f) {}
   Ray(Vertex origin, Direction direction, float importance) : origin_(origin),

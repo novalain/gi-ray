@@ -5,11 +5,9 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
-
 #include "commons.h"
 #include <memory>
 #include "pixel.h"
-#include "intersection_point.h"
 
 /**
   Warning: Stack size is OS-dependent and max is 8182 kb on Ubuntu 64
@@ -19,8 +17,8 @@
   TODO: We might want to declare this array on the heap
   (no restrictions on size except when RAM is filled up)
 */
-#define WIDTH 250
-#define HEIGHT 250
+#define WIDTH 1000
+#define HEIGHT 1000
 
 typedef std::vector<std::vector<std::vector<int>>> ImageRgb;
 typedef std::vector<std::vector<Pixel>> Framebuffer;
@@ -56,12 +54,6 @@ private:
 
   static void SaveImage(const char* img_name, ImageRgb& image);
 
-  ColorDbl HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
-  ColorDbl Raytrace(Ray& ray, Scene& scene, unsigned int depth);
-  ColorDbl Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned int& depth);
-  ColorDbl CalculateDirectIllumination(Ray& ray, IntersectionPoint& p, Scene& scene);
-  std::unique_ptr<IntersectionPoint> GetClosestIntersectionPoint(Ray& ray, Scene& scene);
-  bool CastShadowRay(Ray& ray, Scene& scene, Direction& light_direction);
  public:
   Camera();
   Camera(Vertex eye_pos1, Vertex eye_pos2, Direction direction, Direction up_vector);

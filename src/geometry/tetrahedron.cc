@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 #include "tetrahedron.h"
 #include "triangle.h"
 #include <cmath>
@@ -15,7 +16,7 @@ Tetrahedron::Tetrahedron(Triangle& t0,
 
 Tetrahedron::Tetrahedron(float width, float height, Vertex position, Material material) {
   Vertex v0 = Vertex(width,0,0);
-  float a = 2*M_PI/3;
+  float a = 2 * M_PI / 3;
   glm::mat3 rotmat = glm::mat3(cos(a), sin(a), 0,
                               -sin(a), cos(a), 0,
                                   0 ,      0 , 1);
