@@ -1,4 +1,4 @@
-//#define _USE_MATH_DEFINES // Needed to run in windows/visual studio
+#define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 #include "camera.h"
 #include "ray.h"
 #include "scene.h"
@@ -14,10 +14,8 @@ const float EPSILON = 0.00001f;
 const float REFRACTION_FACTOR_OI = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS; // outside->in
 const float REFRACTION_FACTOR_IO = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR; // inside->out
 const float CRITICAL_ANGLE = asin(REFRACTION_FACTOR_OI);
-const float M_PI = 3.14159265f;
 const unsigned int MAX_DEPTH = 5; // What Max depth makes sense?
-float gamma_factor = 3.6f;
-bool has_hit_diffuse; // TODO remove this when proper importance is implemented
+const float gamma_factor = 3.6f;
 
 std::default_random_engine generator;
 std::uniform_real_distribution<float> distribution(0, 1);
@@ -123,9 +121,10 @@ void Camera::Render(Scene& scene, int spp /* = 1 */) {
       for (int s = 0; s < spp; s++ ) {
         float random_y = distribution(generator) * delta2;
         float random_z = distribution(generator) * delta2;
-        has_hit_diffuse = false; // TODO remove this when importance is implemented
+       
         Vertex pixel_center = Vertex(0, i * delta_ + pixel_center_minimum_ + random_y, j * delta_ + pixel_center_minimum_ + random_z);
         Ray ray = Ray(pixel_center, pixel_center - eye_pos_[pos_idx_]);
+        ray.has_hit_diffuse = false; // TODO remove this when importance is implemented
         temp_color = temp_color + Raytrace(ray, scene, 0);
       }
       framebuffer_[i][j].set_color(temp_color / (float)spp);
@@ -168,6 +167,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
     Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
     Direction reflection_direction = d - 2*(glm::dot(d, n))*n;
     Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
+    reflection_ray.has_hit_diffuse = ray.has_hit_diffuse;
     return Raytrace(reflection_ray, scene, depth + 1);
   }
   if (p.get_material().get_transparence() > 0.f) { // If object has refractive component
@@ -175,10 +175,10 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
   }
   //TODO STOP ON SECOND DIFFUSE
   //TODO INCLUDE DISTANCE IMPORTANCE FOR DIFFUSE-DIFFUSE collisions
-  if (has_hit_diffuse) {
+  if (ray.has_hit_diffuse) {
     return CalculateDirectIllumination(ray, p, scene);
   }
-  has_hit_diffuse = true;
+  ray.has_hit_diffuse = true;
   float r1 = 2.f * (float)M_PI * distribution(generator);
   float r2 = distribution(generator);
   float r2s = sqrtf(r2);
@@ -193,6 +193,7 @@ ColorDbl Camera::Shade(Ray& ray, IntersectionPoint& p, Scene& scene, unsigned in
   Direction n = glm::normalize(p.get_normal());
   Vertex reflection_point_origin = p.get_position() + n * 0.00001f;
   Ray new_ray = Ray(reflection_point_origin, d);
+  new_ray.has_hit_diffuse = ray.has_hit_diffuse;
 
   //TODO why are we multiplying here? Shouldn't it be addition?
   return CalculateDirectIllumination(ray, p, scene) * Raytrace(new_ray, scene, depth + 1);
@@ -215,6 +216,7 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
         sqrtf(1 - REFRACTION_FACTOR_OI*REFRACTION_FACTOR_OI * (1 - I_dot_n*I_dot_n)));
     Vertex refraction_point_origin = p.get_position() - n * EPSILON;
     Ray refraction_ray = Ray(refraction_point_origin, T);
+    refraction_ray.has_hit_diffuse = ray.has_hit_diffuse;
     refraction_ray.set_refraction_status(true);
     return p.get_material().get_transparence() * Raytrace(refraction_ray, scene, depth + 1);
   } else { // we are outside of a glass object, trying to go inside
@@ -228,6 +230,7 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
       Vertex inner_reflection_ray_origin = p.get_position() + n * EPSILON;
       Direction reflection_direction = I - 2.f*(glm::dot(I, n))*n;
       Ray total_inner_reflection_ray = Ray(inner_reflection_ray_origin, reflection_direction);
+      total_inner_reflection_ray.has_hit_diffuse = ray.has_hit_diffuse;
       total_inner_reflection_ray.set_refraction_status(true);
       return p.get_material().get_transparence() * Raytrace(total_inner_reflection_ray, scene, depth + 1);
     } else if ( CRITICAL_ANGLE == alpha ) {
@@ -243,6 +246,7 @@ ColorDbl Camera::HandleRefraction(Ray& ray, IntersectionPoint& p, Scene& scene, 
     }
     Vertex outgoing_refraction_ray_origin = p.get_position() - n * EPSILON;
     Ray refraction_ray = Ray(outgoing_refraction_ray_origin, T);
+    refraction_ray.has_hit_diffuse = ray.has_hit_diffuse;
     refraction_ray.set_refraction_status(false);
     return p.get_material().get_transparence() * Raytrace(refraction_ray, scene, depth + 1);
   }
