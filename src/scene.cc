@@ -10,10 +10,10 @@ Scene::Scene() {
 }
 
 void Scene::InitObjects() {
-  Vertex v0 = Vertex( 8 - 6,  6 - 7, -2);
-  Vertex v1 = Vertex( 9 - 6,  3 - 7, -2);
-  Vertex v2 = Vertex(10 - 6,  6 - 7, -2);
-  Vertex v3 = Vertex( 9 - 6,  4.5f - 7.f,  1);
+  Vertex v0 = Vertex(2.f, -1.0f, -2.f);
+  Vertex v1 = Vertex(3.f, -4.0f, -2.f);
+  Vertex v2 = Vertex(4.f, -1.0f, -2.f);
+  Vertex v3 = Vertex(3.f, -2.5f,  1.f);
 
   // Bottom
   /*Triangle t0 = Triangle(v0, v2, v1, tetra1_mat);
@@ -37,34 +37,33 @@ void Scene::InitObjects() {
 
 void Scene::InitRoom() {
   // Floor vertices
-  Vertex vfC = Vertex( 5,  0, -5); // center vertex on floor
-  Vertex vf1 = Vertex(-3,  0, -5);
-  Vertex vf2 = Vertex( 0, -6, -5);
-  Vertex vf3 = Vertex(10, -6, -5);
-  Vertex vf4 = Vertex(13,  0, -5);
-  Vertex vf5 = Vertex(10,  6, -5);
-  Vertex vf6 = Vertex( 0,  6, -5);
+  Vertex vfC = Vertex( 5.f,  0.f, -5.f); // center vertex on floor
+  Vertex vf1 = Vertex(-3.f,  0.f, -5.f);
+  Vertex vf2 = Vertex( 0.f, -6.f, -5.f);
+  Vertex vf3 = Vertex(10.f, -6.f, -5.f);
+  Vertex vf4 = Vertex(13.f,  0.f, -5.f);
+  Vertex vf5 = Vertex(10.f,  6.f, -5.f);
+  Vertex vf6 = Vertex( 0.f,  6.f, -5.f);
 
   // Ceiling vertices
-  Vertex vcC = Vertex( 5,  0,  5); // center vertex on ceiling
-  Vertex vc1 = Vertex(-3,  0,  5);
-  Vertex vc2 = Vertex( 0, -6,  5);
-  Vertex vc3 = Vertex(10, -6,  5);
-  Vertex vc4 = Vertex(13,  0,  5);
-  Vertex vc5 = Vertex(10,  6,  5);
-  Vertex vc6 = Vertex( 0,  6,  5);
+  Vertex vcC = Vertex( 5.f,  0.f,  5.f); // center vertex on ceiling
+  Vertex vc1 = Vertex(-3.f,  0.f,  5.f);
+  Vertex vc2 = Vertex( 0.f, -6.f,  5.f);
+  Vertex vc3 = Vertex(10.f, -6.f,  5.f);
+  Vertex vc4 = Vertex(13.f,  0.f,  5.f);
+  Vertex vc5 = Vertex(10.f,  6.f,  5.f);
+  Vertex vc6 = Vertex( 0.f,  6.f,  5.f);
 
   // Materials
-  Material floor_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
-  Material ceiling_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
-  Material wall1_mat = Material(1,0,0, COLOR_BLUE, glm::vec3(0,0,0));
-  Material wall2a_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
-  Material wall2b_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
-  Material wall3_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(0,0,0));
-  Material wall4_mat = Material(1,0,0, COLOR_RED, glm::vec3(0,0,0));
-  Material wall5_mat = Material(1,0,0, COLOR_BLACK, glm::vec3(0,0,0));
-  Material wall6_mat = Material(1,0,0, COLOR_BLACK, glm::vec3(0,0,0));
-  Material area_light_mat = Material(1,0,0, COLOR_WHITE, glm::vec3(255, 255, 255));
+  Material floor_mat    = Material(1.f, 0.f, 0.f, COLOR_WHITE, glm::vec3(0.f, 0.f, 0.f));
+  Material ceiling_mat  = Material(1.f, 0.f, 0.f, COLOR_WHITE, glm::vec3(0.f, 0.f, 0.f));
+  Material wall1_mat    = Material(1.f, 0.f, 0.f, COLOR_BLUE,  glm::vec3(0.f, 0.f, 0.f));
+  Material wall2a_mat   = Material(1.f, 0.f, 0.f, COLOR_WHITE, glm::vec3(0.f, 0.f, 0.f));
+  Material wall2b_mat   = Material(1.f, 0.f, 0.f, COLOR_WHITE, glm::vec3(0.f, 0.f, 0.f));
+  Material wall3_mat    = Material(1.f, 0.f, 0.f, COLOR_WHITE, glm::vec3(0.f, 0.f, 0.f));
+  Material wall4_mat    = Material(1.f, 0.f, 0.f, COLOR_RED,   glm::vec3(0.f, 0.f, 0.f));
+  Material wall5_mat    = Material(1.f, 0.f, 0.f, COLOR_BLACK, glm::vec3(0.f, 0.f, 0.f));
+  Material wall6_mat    = Material(1.f, 0.f, 0.f, COLOR_BLACK, glm::vec3(0.f, 0.f, 0.f));
 
   //std::vector<Triangle> triangle_list;
 
