@@ -85,7 +85,6 @@ void Camera::ClearColorBuffer(ColorDbl clear_color) {
 }
 
 void Camera::Render(Scene& scene, int spp /* = 1 */) {
-  float factor = ((float)RAND_MAX) / delta_;
   float delta2 = delta_ - (delta_ / 2.f);
   Raytracer raytracer;
   #pragma omp parallel for schedule(dynamic, 1)
@@ -106,9 +105,12 @@ void Camera::Render(Scene& scene, int spp /* = 1 */) {
   }
 }
 
-void Camera::CreateImage(std::string filename, const bool& normalize_intensities) {
-  ImageRgb image_rgb (WIDTH,std::vector<std::vector<int>>(HEIGHT,std::vector<int>(3)));
-  filename = "results/" + filename + "_" + std::to_string(WIDTH) + "x" + std::to_string(HEIGHT);
+void Camera::CreateImage(std::string filename,
+                         const bool& normalize_intensities) {
+  ImageRgb image_rgb(
+      WIDTH, std::vector<std::vector<int>>(HEIGHT, std::vector<int>(3)));
+  filename = "results/" + filename + "_" + std::to_string(WIDTH) + "x" +
+             std::to_string(HEIGHT);
   if (normalize_intensities) {
     NormalizeByMaxIntensity(image_rgb);
   } else {
@@ -122,16 +124,15 @@ void Camera::CreateImage(std::string filename, const bool& normalize_intensities
   SaveImage(filename.c_str(), image_rgb);
 }
 
-void Camera::SaveImage(const char* img_name,
-  ImageRgb& image) {
+void Camera::SaveImage(const char* img_name, ImageRgb& image) {
   FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
   (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
   for (int i = WIDTH - 1; i >= 0; i--) {
     for (int j = HEIGHT - 1; j >= 0; j--) {
       static unsigned char color[3];
-      color[0] = image[j][i][0]; // red
-      color[1] = image[j][i][1]; // green
-      color[2] = image[j][i][2]; // blue
+      color[0] = image[j][i][0];  // red
+      color[1] = image[j][i][1];  // green
+      color[2] = image[j][i][2];  // blue
       (void)fwrite(color, 1, 3, fp);
     }
   }
