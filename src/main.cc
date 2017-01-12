@@ -16,7 +16,7 @@ typedef vector<vector<vec3> > Framebuffer;
 
 const int WIDTH = 50;
 const int HEIGHT = 50;
-const int SAMPLES = 10000;
+const int SAMPLES = 1000;
 const int MAX_DEPTH = 2; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
@@ -355,11 +355,55 @@ float ShadowRay(Ray& ray,
   return o_light_factor;
 }
 
+bool SolveQuadratic(const float& a,
+                    const float& b,
+                    const float& c,
+                    float& x0,
+                    float& x1) {
+  float discr = b * b - 4 * a * c;
+  if (discr < 0) {
+    return false;
+  } else if (discr == 0) {
+    x0 = x1 = -0.5f * b / a;
+  } else {
+    float q = (b > 0) ? -0.5f * (b + sqrt(discr)) : -0.5f * (b - sqrt(discr));
+    x0 = q / a;
+    x1 = c / q;
+  }
+  if (x0 > x1) {
+    std::swap(x0, x1);
+  }
+  return true;
+}
+
+bool SphereIntersection(Ray &ray, Sphere &sphere, vec3 &collision_point) {
+  vec3 L = ray.origin - *sphere.position;
+  vec3 dir = ray.direction;
+  float radius2 = sphere.radius * sphere.radius;
+  float a = glm::dot(dir, dir);
+  float b = 2 * glm::dot(dir, L);
+  float c = glm::dot(L, L) - radius2;
+  float t0, t1;
+  if (!SolveQuadratic(a, b, c, t0, t1)) {
+    return false;
+  }
+  if (t0 < 0) {
+    if (t1 < 0) {
+      return false;
+    }
+    t0 = t1;
+  }
+  collision_point = ray.origin + dir * t0;
+  return true;
+  // return std::make_unique<IntersectionPoint>(intersection_point, normal, material_, t0);
+}
+
 bool GetClosestIntersectionPoint(Ray &ray,
                                  vector<Triangle>& ta,
                                  vector<Sphere>& sa,
                                  float &z_buffer,
-                                 Triangle* &triangle_pointer,
+                                 vec3& normal,
+                                 Material* & mat,
                                  vec3 &collision_point) {
   // cout << "Closest Intersection Point" << endl;
   bool has_found_intersection_point = false;
@@ -374,8 +418,25 @@ bool GetClosestIntersectionPoint(Ray &ray,
         // cout << "\t\tEven found a closer point!" << endl;
         z_buffer = z_temp;
         has_found_intersection_point = true;
-        triangle_pointer = &triangle;
         collision_point = temp_collision_point;
+        normal = triangle.normal;
+        mat = triangle.material;
+      }
+      // cout << "Möller EXIT" << endl;
+    }
+  }
+  for (auto& sphere : sa) {
+    vec3 temp_collision_point;
+    if (SphereIntersection(ray, sphere, temp_collision_point)) {
+    // cout << "Pre-Möller" << endl;
+      float z_temp = glm::length(ray_origin - temp_collision_point);
+      if (z_temp < z_buffer) {
+        // cout << "\t\tEven found a closer point!" << endl;
+        z_buffer = z_temp;
+        has_found_intersection_point = true;
+        collision_point = temp_collision_point;
+        normal = glm::normalize(collision_point - *sphere.position);
+        mat = sphere.material;
       }
       // cout << "Möller EXIT" << endl;
     }
@@ -462,12 +523,13 @@ Color HandleDirectIllumination(vector<PointLight> &pla,
 Color HandleDiffuse(int depth,
                     vector<Triangle> &ta,
                     vector<Sphere> &sa,
-                    Triangle* triangle,
+                    vec3& normal,
+                    Material* & mat,
                     vec3& collision_point,
                     vector<PointLight> &pla,
                     vector<Triangle*> &ala) {
   // cout << "\tHandling diffuse case!" << endl;
-  vec3 w = triangle->normal;
+  vec3 w = normal;
   // Generalized formula for finding tangent u given a unit length normal vector w
   vec3 u = glm::normalize(glm::cross(fabs(w.x) > 0.1f ? vec3(0.0f, 1.0f, 0.0f) : vec3(1.0f, 0.0f, 0.0f), w));
   vec3 v = glm::cross(w, u);
@@ -485,7 +547,7 @@ Color HandleDiffuse(int depth,
   vec3 reflection_point_origin = collision_point + w * 0.00001f;
   Ray ray = Ray(reflection_point_origin, d);
   // cout << "\t\tDiffuse DONE!!" << endl;
-  return DIFFUSE_CONTRIBUTION * triangle->material->diffuse *
+  return DIFFUSE_CONTRIBUTION * mat->diffuse *
          Raytrace(ray, ta, sa, pla, ala, ++depth);
 }
 
@@ -493,13 +555,14 @@ Color HandleSpecular(Ray& ray,
                      int depth,
                      vector<Triangle>& ta,
                      vector<Sphere>& sa,
-                     Triangle* triangle,
+                     vec3& normal,
+                     Material* & mat,
                      vec3& collision_point,
                      vector<PointLight>& pla,
                      vector<Triangle*>& ala/*,
                      reverse_normal = false*/) {
   // vec3 n = reverse_normal ? -triangle->normal, triangle->normal;
-  vec3 n = triangle->normal;
+  vec3 n = normal;
   vec3 d = ray.direction;
   if (glm::dot(n,d) > 0) {
     n = -n;
@@ -508,7 +571,7 @@ Color HandleSpecular(Ray& ray,
   vec3 reflection_point_origin = collision_point + n * 0.00001f;
   vec3 reflection_direction = d - 2 * (glm::dot(d, n))*n;
   Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
-  return triangle->material->specular *
+  return mat->specular *
          Raytrace(reflection_ray, ta, sa, pla, ala, ++depth);
 }
 
@@ -516,12 +579,13 @@ Color HandleRefraction(Ray& ray,
                        int depth,
                        vector<Triangle>& ta,
                        vector<Sphere>& sa,
-                       Triangle* triangle,
+                       vec3& normal,
+                       Material* mat,
                        vec3& collision_point,
                        vector<PointLight>& pla,
                        vector<Triangle*>& ala/*,
                        reverse_normal = false*/) {
-  vec3 n = triangle->normal;
+  vec3 n = normal;
   vec3 I = ray.direction;
   // assert(std::abs(1.0f - (float)glm::length(p.get_normal())) < EPSILON);
   // assert(std::abs(1.0f - (float) glm::length(I)) < EPSILON);
@@ -545,7 +609,7 @@ Color HandleRefraction(Ray& ray,
       sqrtf(1.f - refractive_factor * refractive_factor * (1.f - I_dot_n * I_dot_n)));
   vec3 refraction_point_origin = collision_point + n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
   Ray refraction_ray = Ray(refraction_point_origin, T);
-  return triangle->material->transparency * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
+  return mat->transparency * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
 }
 
 Color Raytrace(Ray& ray,
@@ -569,36 +633,38 @@ Color Raytrace(Ray& ray,
 
   float z_buffer = FLT_MAX;
   Triangle* triangle;
+  vec3 normal;
+  Material* mat;
   vec3 collision_point;
 
   // Get the ray intersection with the nearest surface
-  if (GetClosestIntersectionPoint(ray, ta, sa, z_buffer, triangle, collision_point)) {
+  if (GetClosestIntersectionPoint(ray, ta, sa, z_buffer, normal, mat, collision_point)) {
     // Self emmitance - Required for area light sources
-    float diffuse = triangle->material->diffuse;
-    float specular = triangle->material->specular;
-    float transparency = triangle->material->transparency;
-    float emmitance = triangle->material->emmitance;
+    float diffuse = mat->diffuse;
+    float specular = mat->specular;
+    float transparency = mat->transparency;
+    float emmitance = mat->emmitance;
 
     Color self_emmitance = Color(0.0f, 0.0f, 0.0f);
     if(emmitance > 0.0f) {
-      self_emmitance = (1.0f + emmitance) * triangle->material->color;
+      self_emmitance = (1.0f + emmitance) * mat->color;
     }
 
     // Direct Illumination - Required for point lights
     //radiance += HandleDirectIllumination(pla, ala, ta, triangle, collision_point);
 
     if (diffuse > 0.0f) {
-      radiance += HandleDiffuse(depth, ta, sa, triangle, collision_point, pla, ala) *  triangle->material->color;
+      radiance += HandleDiffuse(depth, ta, sa, normal, mat, collision_point, pla, ala) *  mat->color;
     }
 
     // if (transparency > 0.0f) {
       // If outside going into object
       // if (glm::dot(triangle.normal, ray.direction) < 0.0f) {
         if (specular > 0.0f) {
-          radiance += HandleSpecular(ray, depth, ta, sa, triangle, collision_point, pla, ala);
+          radiance += HandleSpecular(ray, depth, ta, sa, normal, mat, collision_point, pla, ala);
         }
         if (transparency > 0.0f) {
-          radiance += HandleRefraction(ray, depth, ta, sa, triangle, collision_point, pla, ala);
+          radiance += HandleRefraction(ray, depth, ta, sa, normal, mat, collision_point, pla, ala);
         }
       // } else { // reversed normal, we are inside an object
 
