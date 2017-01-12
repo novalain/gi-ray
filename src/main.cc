@@ -6,17 +6,18 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <random>
+#include <omp.h>
 
 using namespace std;
 
 typedef glm::vec3 vec3;
 typedef vec3 Color;
-typedef vector<vector<vector<int> > > RgbImage;
 typedef vector<vector<vec3> > Framebuffer;
 
-const int WIDTH = 200;
-const int HEIGHT = 200;
-const int MAX_DEPTH = 3; // 0 = only point directly seen by camera
+const int WIDTH = 50;
+const int HEIGHT = 50;
+const int SAMPLES = 10000;
+const int MAX_DEPTH = 2; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
 const float DIFFUSE_CONTRIBUTION = .80f;
@@ -29,10 +30,6 @@ const float CRITICAL_ANGLE = asin(REFRACTIVE_FACTOR_ENTER_GLASS);
 
 default_random_engine generator;
 uniform_real_distribution<float> distribution(0, 1);
-
-float getRandom() {
-  return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-}
 
 struct Material {
   Color color;
@@ -59,10 +56,10 @@ struct Material {
 
 struct Sphere {
   float radius;
-  vec3 position;
+  vec3* position;
   Material* material;
 
-  Sphere(vec3 pos, float rad, Material* mat)
+  Sphere(vec3* pos, float& rad, Material* mat)
       : radius(rad), position(pos), material(mat) {}
 };
 
@@ -99,6 +96,16 @@ struct Ray {
   Ray(vec3 ori, vec3 dir)
       : origin(ori), direction(glm::normalize(dir)) {}
 };
+
+void CreateSphere(float r,
+                  vector<vec3>& va,
+                  vector<Sphere>& sa,
+                  Material* mat,
+                  vec3 center_position = vec3(0.0f, 0.0f, 0.0f)) {
+  int v_idx = va.size();
+  va.push_back(vec3(center_position.x, center_position.y, center_position.z));
+  sa.push_back(Sphere(&va[v_idx], r, mat));
+}
 
 void CreateCube(float w,
                 float h,
@@ -217,6 +224,7 @@ void CreateFourTriangleQuad(float w,
 
 void CreateScene(vector<vec3> &va,
                  vector<Triangle> &ta,
+                 vector<Sphere> &sa,
                  vector<Material> &ma,
                  vector<PointLight> &pla,
                  vector<Triangle*> &ala) {
@@ -224,14 +232,14 @@ void CreateScene(vector<vec3> &va,
   {
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.0f, 0.0f));       // 0 WHITE
     ma.push_back(Material(vec3(0.1f, 0.1f, 0.1f), 1.0f, 0.0f, 0.0f));       // 1 BLACKISH
-    ma.push_back(Material(vec3(1.0f, 0.5f, 0.5f), 1.0f, 0.0f, 0.0f));       // 2 REDISH
-    ma.push_back(Material(vec3(0.5f, 1.0f, 0.5f), 1.0f, 0.0f, 0.0f));       // 3 GREENISH
-    ma.push_back(Material(vec3(0.5f, 0.5f, 1.0f), 1.0f, 0.0f, 0.0f));       // 4 BLUEISH
+    ma.push_back(Material(vec3(1.0f, 0.2f, 0.2f), 1.0f, 0.0f, 0.0f));       // 2 REDISH
+    ma.push_back(Material(vec3(0.2f, 1.0f, 0.2f), 1.0f, 0.0f, 0.0f));       // 3 GREENISH
+    ma.push_back(Material(vec3(0.2f, 0.2f, 1.0f), 1.0f, 0.0f, 0.0f));       // 4 BLUEISH
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.0f, 0.0f, 0.1f)); // 5 WHITE EMMITER
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, 0.0f));       // 6 PERFECT MIRROR
-    ma.push_back(Material(vec3(1.0f, 0.0f, 0.0f), 0.6f, 0.4f, 0.0f));       // 7 RUBY
+    ma.push_back(Material(vec3(1.0f, 0.0f, 0.0f), 0.7f, 0.3f, 0.0f));       // 7 RUBY
     ma.push_back(Material(vec3(0.0f, 1.0f, 0.0f), 0.4f, 0.6f, 0.0f));       // 8 EMERALD
-    ma.push_back(Material(vec3(0.0f, 0.0f, 1.0f), 0.6f, 0.4f, 0.0f));       // 9 SAPPHIRE
+    ma.push_back(Material(vec3(0.0f, 0.0f, 1.0f), 0.7f, 0.3f, 0.0f));       // 9 SAPPHIRE
   }
   // Create the Cornell Box
   {
@@ -256,6 +264,7 @@ void CreateScene(vector<vec3> &va,
     CreateCube(1.4f, 1.4f, 1.4f, va, ta, ala, &ma[7], true, vec3(2.0f, -1.6f, -1.0f));
     // CreateCube(2.0f, 0.1f, 2.0f, va, ta, ala, &ma[5], true, vec3(0.0f, 4.05f, 0.0f));
     CreateFourTriangleQuad(2.0f, 2.0f, va, ta, ala, &ma[5], false, vec3(0.0f, 4.95f, 0.0f));
+    CreateSphere(1.f, va, sa, &ma[6], vec3(0.f, 0.f, -1.5f));
   }
   //Create Point Lights
   {
@@ -331,15 +340,12 @@ float ShadowRay(Ray& ray,
   float o_light_factor = 1.0f;
   int t_length = ta.size();
   for (auto& triangle : ta) {
-  // for (int i = 0; i < t_length; i++) {
     vec3 temp_collision_point;
     if (&triangle != &(*area_light_triangle) &&
         MoellerTrumbore(ray, triangle, temp_collision_point)) {
-      // if (MoellerTrumbore(ray, ta[i], temp_collision_point)) {
       float z_temp = glm::length(ray.origin - temp_collision_point);
       if (z_temp < z_buffer) {
         o_light_factor *= triangle.material->transparency;
-        // o_light_factor *= ta[i].material->transparency;
         if (o_light_factor < 0.00001f) {
           return 0.0f;
         }
@@ -350,7 +356,8 @@ float ShadowRay(Ray& ray,
 }
 
 bool GetClosestIntersectionPoint(Ray &ray,
-                                 vector<Triangle> &ta,
+                                 vector<Triangle>& ta,
+                                 vector<Sphere>& sa,
                                  float &z_buffer,
                                  Triangle* &triangle_pointer,
                                  vec3 &collision_point) {
@@ -358,19 +365,16 @@ bool GetClosestIntersectionPoint(Ray &ray,
   bool has_found_intersection_point = false;
   vec3 ray_origin = ray.origin;
   int t_length = ta.size();
-  // for (auto& triangle : ta) {
-  for (int i = 0; i < t_length; i++) {
+  for (auto& triangle : ta) {
     vec3 temp_collision_point;
-    // if (MoellerTrumbore(ray, triangle, temp_collision_point)) {
+    if (MoellerTrumbore(ray, triangle, temp_collision_point)) {
     // cout << "Pre-Möller" << endl;
-    if (MoellerTrumbore(ray, ta[i], temp_collision_point)) {
       float z_temp = glm::length(ray_origin - temp_collision_point);
       if (z_temp < z_buffer) {
         // cout << "\t\tEven found a closer point!" << endl;
         z_buffer = z_temp;
         has_found_intersection_point = true;
-        // triangle_pointer = &triangle;
-        triangle_pointer = &ta[i];
+        triangle_pointer = &triangle;
         collision_point = temp_collision_point;
       }
       // cout << "Möller EXIT" << endl;
@@ -383,6 +387,7 @@ bool GetClosestIntersectionPoint(Ray &ray,
 // Forward declaration, just for now.. should probably later be part of a Raytrace class?
 Color Raytrace(Ray& ray,
                vector<Triangle> &ta,
+               vector<Sphere> &sa,
                vector<PointLight> &pla,
                vector<Triangle*> &ala,
                unsigned int depth);
@@ -416,17 +421,15 @@ Color HandleDirectIllumination(vector<PointLight> &pla,
 
   for(auto &area_light_triangle : ala) {
     // Randomize a point on the triangle using barycentric coordinates
-    // float u = distribution(generator);
-    // float v = distribution(generator);
-    float u = getRandom();
-    float v = getRandom();
-    float w = getRandom();
+    float u = distribution(generator);
+    float v = distribution(generator);
+    float w = distribution(generator);
     float sum = u + v + w;
-    // if (sum > 1.0f) { // todo: this might be biased?
+    if (sum > 1.0f) { // todo: this might be biased?
       u /= sum;
       v /= sum;
       w /= sum;
-    // }
+    }
 
     vec3 alp = *(area_light_triangle->v1) * w +
                *(area_light_triangle->v2) * u +
@@ -458,6 +461,7 @@ Color HandleDirectIllumination(vector<PointLight> &pla,
 // TODO: PointLights aren't doing anything here but is needed in the Raytrace function.. raytracer should probably be a class
 Color HandleDiffuse(int depth,
                     vector<Triangle> &ta,
+                    vector<Sphere> &sa,
                     Triangle* triangle,
                     vec3& collision_point,
                     vector<PointLight> &pla,
@@ -470,11 +474,11 @@ Color HandleDiffuse(int depth,
 
   // Random direction d within hemisphere
   // Random angle
-  // float r1 = PI2 * distribution(generator);
-  float r1 = PI2 * getRandom();
+  float r1 = PI2 * distribution(generator);
+  // float r1 = PI2 * getRandom();
   // Random distance from center
-  // float r2 = distribution(generator);
-  float r2 = getRandom();
+  float r2 = distribution(generator);
+  // float r2 = getRandom();
   float r2s = sqrtf(r2);
   vec3 d = glm::normalize(u * (float)cos(r1) * r2s + v*(float)sin(r1) * r2s + w * sqrtf(1.0f - r2));
 
@@ -482,12 +486,13 @@ Color HandleDiffuse(int depth,
   Ray ray = Ray(reflection_point_origin, d);
   // cout << "\t\tDiffuse DONE!!" << endl;
   return DIFFUSE_CONTRIBUTION * triangle->material->diffuse *
-         Raytrace(ray, ta, pla, ala, ++depth);
+         Raytrace(ray, ta, sa, pla, ala, ++depth);
 }
 
 Color HandleSpecular(Ray& ray,
                      int depth,
                      vector<Triangle>& ta,
+                     vector<Sphere>& sa,
                      Triangle* triangle,
                      vec3& collision_point,
                      vector<PointLight>& pla,
@@ -504,12 +509,13 @@ Color HandleSpecular(Ray& ray,
   vec3 reflection_direction = d - 2 * (glm::dot(d, n))*n;
   Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
   return triangle->material->specular *
-         Raytrace(reflection_ray, ta, pla, ala, ++depth);
+         Raytrace(reflection_ray, ta, sa, pla, ala, ++depth);
 }
 
 Color HandleRefraction(Ray& ray,
                        int depth,
                        vector<Triangle>& ta,
+                       vector<Sphere>& sa,
                        Triangle* triangle,
                        vec3& collision_point,
                        vector<PointLight>& pla,
@@ -539,11 +545,12 @@ Color HandleRefraction(Ray& ray,
       sqrtf(1.f - refractive_factor * refractive_factor * (1.f - I_dot_n * I_dot_n)));
   vec3 refraction_point_origin = collision_point + n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
   Ray refraction_ray = Ray(refraction_point_origin, T);
-  return triangle->material->transparency * Raytrace(refraction_ray, ta, pla, ala, ++depth);
+  return triangle->material->transparency * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
 }
 
 Color Raytrace(Ray& ray,
                vector<Triangle>& ta,
+               vector<Sphere>& sa,
                vector<PointLight>& pla,
                vector<Triangle*>& ala,
                unsigned int depth) {
@@ -565,7 +572,7 @@ Color Raytrace(Ray& ray,
   vec3 collision_point;
 
   // Get the ray intersection with the nearest surface
-  if (GetClosestIntersectionPoint(ray, ta, z_buffer, triangle, collision_point)) {
+  if (GetClosestIntersectionPoint(ray, ta, sa, z_buffer, triangle, collision_point)) {
     // Self emmitance - Required for area light sources
     float diffuse = triangle->material->diffuse;
     float specular = triangle->material->specular;
@@ -574,24 +581,24 @@ Color Raytrace(Ray& ray,
 
     Color self_emmitance = Color(0.0f, 0.0f, 0.0f);
     if(emmitance > 0.0f) {
-      self_emmitance = (1 + emmitance) * triangle->material->color;
+      self_emmitance = (1.0f + emmitance) * triangle->material->color;
     }
 
     // Direct Illumination - Required for point lights
-    radiance += HandleDirectIllumination(pla, ala, ta, triangle, collision_point);
+    //radiance += HandleDirectIllumination(pla, ala, ta, triangle, collision_point);
 
     if (diffuse > 0.0f) {
-      radiance += HandleDiffuse(depth, ta, triangle, collision_point, pla, ala) *  triangle->material->color;
+      radiance += HandleDiffuse(depth, ta, sa, triangle, collision_point, pla, ala) *  triangle->material->color;
     }
 
     // if (transparency > 0.0f) {
       // If outside going into object
       // if (glm::dot(triangle.normal, ray.direction) < 0.0f) {
         if (specular > 0.0f) {
-          radiance += HandleSpecular(ray, depth, ta, triangle, collision_point, pla, ala);
+          radiance += HandleSpecular(ray, depth, ta, sa, triangle, collision_point, pla, ala);
         }
         if (transparency > 0.0f) {
-          radiance += HandleRefraction(ray, depth, ta, triangle, collision_point, pla, ala);
+          radiance += HandleRefraction(ray, depth, ta, sa, triangle, collision_point, pla, ala);
         }
       // } else { // reversed normal, we are inside an object
 
@@ -608,6 +615,7 @@ Color Raytrace(Ray& ray,
 
 void Render(vec3 cam_pos,
             vector<Triangle> &ta,
+            vector<Sphere> &sa,
             vector<PointLight> &pla,
             vector<Triangle*> &ala,
             Framebuffer &frame_buffer,
@@ -616,6 +624,7 @@ void Render(vec3 cam_pos,
             int spp = 1) {
   float delta2 = delta - (delta / 2.0f);
   cout << "Rendering!" << endl;
+  #pragma omp parallel for schedule(dynamic, 1)
   for (int i = 0; i < WIDTH; i++) {
     // fprintf(stderr, "\r\tProgress:  %1.2f%%", 100. * i / (WIDTH - 1));
     for (int j = 0; j < HEIGHT; j++) {
@@ -629,7 +638,7 @@ void Render(vec3 cam_pos,
             vec3(i * delta + pixel_center_minimum + random_x,
                  j * delta + pixel_center_minimum + random_y, 4.0f);
         Ray ray(pixel_random_point, pixel_random_point - cam_pos);
-        temp_color = temp_color + Raytrace(ray, ta, pla, ala, 0);
+        temp_color = temp_color + Raytrace(ray, ta, sa, pla, ala, 0);
         // cout << "Rendering pixel (" << i << ", " << j << ") DONE!" << endl;
       }
       frame_buffer[i][j] = (temp_color / (float)spp);
@@ -660,26 +669,29 @@ int main() {
   vector<vec3>        vertex_array;
   vector<Material>    material_array;
   vector<Triangle>    triangle_array;
+  vector<Sphere>      sphere_array;
   vector<PointLight>  point_light_array;
   vector<Triangle*>   area_light_array;
 
   vertex_array.reserve(100);
-  material_array.reserve(100);
+  material_array.reserve(50);
   triangle_array.reserve(100);
-  point_light_array.reserve(100);
-  area_light_array.reserve(100);
+  point_light_array.reserve(10);
+  area_light_array.reserve(50);
+  sphere_array.reserve(50);
 
   cout << "Creating the scene..." << endl;
-  CreateScene(vertex_array, triangle_array, material_array, point_light_array,
-              area_light_array);
+  CreateScene(vertex_array, triangle_array, sphere_array, material_array, point_light_array,
+             area_light_array);
 
-  Render(camera_pos, triangle_array, point_light_array, area_light_array,
-        frame_buffer, delta, pixel_center_minimum, 20);
+  Render(camera_pos, triangle_array, sphere_array, point_light_array, area_light_array,
+       frame_buffer, delta, pixel_center_minimum, SAMPLES);
 
   float newGamma = 1.0f;
   string test;
   while(true) {
-    string filename = "bananskal.ppm";
+    string filename = "bananskal_";
+    filename += ".ppm";
     cout << "Render DONE!\nWriting to file: " << filename << endl;
     SaveImage(filename.c_str(), frame_buffer);
     cout << "Enter new gamma value: " << endl;
