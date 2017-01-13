@@ -1,5 +1,5 @@
 // TODO: separate depth variables for diffuse, specular and transparent
-
+#define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -14,14 +14,14 @@ typedef glm::vec3 vec3;
 typedef vec3 Color;
 typedef vector<vector<vec3> > Framebuffer;
 
-const int WIDTH = 50;
-const int HEIGHT = 50;
-const int SAMPLES = 1000;
-const int MAX_DEPTH = 2; // 0 = only point directly seen by camera
+const int WIDTH = 500;
+const int HEIGHT = 500;
+const int SAMPLES = 15000;
+const int MAX_DEPTH = 4; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
 const float DIFFUSE_CONTRIBUTION = .80f;
-float GAMMA_FACTOR = 0.8f;
+float GAMMA_FACTOR = 1.4f;
 
 // Refractive indecis: air = 1.0, glass = 1.5
 const float REFRACTIVE_FACTOR_ENTER_GLASS = 1.0f / 1.5f;
@@ -260,11 +260,13 @@ void CreateScene(vector<vec3> &va,
 
   //Create additional geometry
   {
-    CreateCube(1.25f, 1.25f, 1.25f, va, ta, ala, &ma[9], true, vec3(-2.0f, -1.8f, -1.0f));
-    CreateCube(1.4f, 1.4f, 1.4f, va, ta, ala, &ma[7], true, vec3(2.0f, -1.6f, -1.0f));
+    //CreateCube(1.25f, 1.25f, 1.25f, va, ta, ala, &ma[4], true, vec3(-2.0f, -1.8f, -1.0f));
+   // CreateCube(1.4f, 1.4f, 1.4f, va, ta, ala, &ma[2], true, vec3(2.0f, -1.6f, -1.0f));
     // CreateCube(2.0f, 0.1f, 2.0f, va, ta, ala, &ma[5], true, vec3(0.0f, 4.05f, 0.0f));
     CreateFourTriangleQuad(2.0f, 2.0f, va, ta, ala, &ma[5], false, vec3(0.0f, 4.95f, 0.0f));
-    CreateSphere(1.f, va, sa, &ma[6], vec3(0.f, 0.f, -1.5f));
+    CreateSphere(1.6f, va, sa, &ma[4], vec3(-2.25f, -2.25f, -1.6f));
+    CreateSphere(1.6f, va, sa, &ma[7], vec3(2.25f, -2.25f, -1.4f));
+    CreateSphere(1.f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
   }
   //Create Point Lights
   {
@@ -293,6 +295,7 @@ void SaveImage(const char* img_name, Framebuffer &image) {
       (void)fwrite(color, 1, 3, fp);
     }
   }
+  fclose(fp); // no more black lines
 }
 
 void ClearColorBuffer(Color clear_color, Framebuffer &frame_buffer) {
@@ -306,7 +309,7 @@ void ClearColorBuffer(Color clear_color, Framebuffer &frame_buffer) {
 // TODO     
 // Corresponding MöllerTrumbore For Sphere     
 
-bool MoellerTrumbore(Ray &ray, Triangle &triangle, vec3 &collision_point) {
+bool MoellerTrumbore(const Ray &ray, const Triangle &triangle, vec3 &collision_point) {
   vec3 ps = ray.origin;
   vec3 D = ray.direction;
   vec3 v0 = *(triangle.v1);
@@ -326,16 +329,16 @@ bool MoellerTrumbore(Ray &ray, Triangle &triangle, vec3 &collision_point) {
   float u = glm::dot(P, T) / det;
   float v = glm::dot(Q, D) / det;
 
-  if(u >= 0.0f && v >= 0.0f && u+v <= 1.0f && t > 0.0f) {
+  if(u >= -0.000001f && v >= -0.000001f && u+v <= 1.000001f && t > -0.000001f) {
     collision_point = (1.0f - u - v) * v0 + u * v1 + v * v2;
     return true;
   }
   return false;
 }
 
-float ShadowRay(Ray& ray,
-                vector<Triangle>& ta,
-                float z_buffer,
+float ShadowRay(const Ray& ray,
+                const vector<Triangle>& ta,
+                const float& z_buffer,
                 Triangle* area_light_triangle = nullptr) {
   float o_light_factor = 1.0f;
   int t_length = ta.size();
@@ -376,7 +379,7 @@ bool SolveQuadratic(const float& a,
   return true;
 }
 
-bool SphereIntersection(Ray &ray, Sphere &sphere, vec3 &collision_point) {
+bool SphereIntersection(const Ray &ray, const Sphere &sphere, vec3 &collision_point) {
   vec3 L = ray.origin - *sphere.position;
   vec3 dir = ray.direction;
   float radius2 = sphere.radius * sphere.radius;
@@ -398,9 +401,9 @@ bool SphereIntersection(Ray &ray, Sphere &sphere, vec3 &collision_point) {
   // return std::make_unique<IntersectionPoint>(intersection_point, normal, material_, t0);
 }
 
-bool GetClosestIntersectionPoint(Ray &ray,
-                                 vector<Triangle>& ta,
-                                 vector<Sphere>& sa,
+bool GetClosestIntersectionPoint(const Ray &ray,
+                                 const vector<Triangle>& ta,
+                                 const vector<Sphere>& sa,
                                  float &z_buffer,
                                  vec3& normal,
                                  Material* & mat,
@@ -446,18 +449,18 @@ bool GetClosestIntersectionPoint(Ray &ray,
 }
 
 // Forward declaration, just for now.. should probably later be part of a Raytrace class?
-Color Raytrace(Ray& ray,
-               vector<Triangle> &ta,
-               vector<Sphere> &sa,
-               vector<PointLight> &pla,
-               vector<Triangle*> &ala,
+Color Raytrace(const Ray& ray,
+               const vector<Triangle> &ta,
+               const vector<Sphere> &sa,
+               const vector<PointLight> &pla,
+               const vector<Triangle*> &ala,
                unsigned int depth);
 
-Color HandleDirectIllumination(vector<PointLight> &pla,
-                               vector<Triangle*> &ala,
-                               vector<Triangle> &ta,
+Color HandleDirectIllumination(const vector<PointLight> &pla,
+                               const vector<Triangle*> &ala,
+                               const vector<Triangle> &ta,
                                Triangle* triangle,
-                               vec3 &collision_point) {
+                               const vec3 &collision_point) {
   Color radiance = Color(0.0f, 0.0f, 0.0f);
   // TODO: create separate function that take in the pos, intensity & color?
   for(auto &point_light : pla) {
@@ -521,13 +524,12 @@ Color HandleDirectIllumination(vector<PointLight> &pla,
 
 // TODO: PointLights aren't doing anything here but is needed in the Raytrace function.. raytracer should probably be a class
 Color HandleDiffuse(int depth,
-                    vector<Triangle> &ta,
-                    vector<Sphere> &sa,
-                    vec3& normal,
-                    Material* & mat,
-                    vec3& collision_point,
-                    vector<PointLight> &pla,
-                    vector<Triangle*> &ala) {
+                    const vector<Triangle> &ta,
+                    const vector<Sphere> &sa,
+                    const vec3& normal,
+                    const vec3& collision_point,
+                    const vector<PointLight> &pla,
+                    const vector<Triangle*> &ala) {
   // cout << "\tHandling diffuse case!" << endl;
   vec3 w = normal;
   // Generalized formula for finding tangent u given a unit length normal vector w
@@ -547,19 +549,17 @@ Color HandleDiffuse(int depth,
   vec3 reflection_point_origin = collision_point + w * 0.00001f;
   Ray ray = Ray(reflection_point_origin, d);
   // cout << "\t\tDiffuse DONE!!" << endl;
-  return DIFFUSE_CONTRIBUTION * mat->diffuse *
-         Raytrace(ray, ta, sa, pla, ala, ++depth);
+  return DIFFUSE_CONTRIBUTION * Raytrace(ray, ta, sa, pla, ala, ++depth);
 }
 
-Color HandleSpecular(Ray& ray,
+Color HandleSpecular(const Ray& ray,
                      int depth,
-                     vector<Triangle>& ta,
-                     vector<Sphere>& sa,
-                     vec3& normal,
-                     Material* & mat,
-                     vec3& collision_point,
-                     vector<PointLight>& pla,
-                     vector<Triangle*>& ala/*,
+                     const vector<Triangle>& ta,
+                     const vector<Sphere>& sa,
+                     const vec3& normal,
+                     const vec3& collision_point,
+                     const vector<PointLight>& pla,
+                     const vector<Triangle*>& ala/*,
                      reverse_normal = false*/) {
   // vec3 n = reverse_normal ? -triangle->normal, triangle->normal;
   vec3 n = normal;
@@ -571,19 +571,17 @@ Color HandleSpecular(Ray& ray,
   vec3 reflection_point_origin = collision_point + n * 0.00001f;
   vec3 reflection_direction = d - 2 * (glm::dot(d, n))*n;
   Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
-  return mat->specular *
-         Raytrace(reflection_ray, ta, sa, pla, ala, ++depth);
+  return Raytrace(reflection_ray, ta, sa, pla, ala, ++depth);
 }
 
-Color HandleRefraction(Ray& ray,
+Color HandleRefraction(const Ray& ray,
                        int depth,
-                       vector<Triangle>& ta,
-                       vector<Sphere>& sa,
-                       vec3& normal,
-                       Material* mat,
-                       vec3& collision_point,
-                       vector<PointLight>& pla,
-                       vector<Triangle*>& ala/*,
+                       const vector<Triangle>& ta,
+                       const vector<Sphere>& sa,
+                       const vec3& normal,
+                       const vec3& collision_point,
+                       const vector<PointLight>& pla,
+                       const vector<Triangle*>& ala/*,
                        reverse_normal = false*/) {
   vec3 n = normal;
   vec3 I = ray.direction;
@@ -609,14 +607,14 @@ Color HandleRefraction(Ray& ray,
       sqrtf(1.f - refractive_factor * refractive_factor * (1.f - I_dot_n * I_dot_n)));
   vec3 refraction_point_origin = collision_point + n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
   Ray refraction_ray = Ray(refraction_point_origin, T);
-  return mat->transparency * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
+  return Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
 }
 
-Color Raytrace(Ray& ray,
-               vector<Triangle>& ta,
-               vector<Sphere>& sa,
-               vector<PointLight>& pla,
-               vector<Triangle*>& ala,
+Color Raytrace(const Ray& ray,
+               const vector<Triangle>& ta,
+               const vector<Sphere>& sa,
+               const vector<PointLight>& pla,
+               const vector<Triangle*>& ala,
                unsigned int depth) {
   Color radiance = Color(0.0f, 0.0f, 0.0f);
 
@@ -644,6 +642,7 @@ Color Raytrace(Ray& ray,
     float specular = mat->specular;
     float transparency = mat->transparency;
     float emmitance = mat->emmitance;
+    const vec3 cp = collision_point;
 
     Color self_emmitance = Color(0.0f, 0.0f, 0.0f);
     if(emmitance > 0.0f) {
@@ -654,17 +653,17 @@ Color Raytrace(Ray& ray,
     //radiance += HandleDirectIllumination(pla, ala, ta, triangle, collision_point);
 
     if (diffuse > 0.0f) {
-      radiance += HandleDiffuse(depth, ta, sa, normal, mat, collision_point, pla, ala) *  mat->color;
+      radiance += mat->diffuse * HandleDiffuse(depth, ta, sa, normal, cp, pla, ala) *  mat->color;
     }
 
     // if (transparency > 0.0f) {
       // If outside going into object
       // if (glm::dot(triangle.normal, ray.direction) < 0.0f) {
         if (specular > 0.0f) {
-          radiance += HandleSpecular(ray, depth, ta, sa, normal, mat, collision_point, pla, ala);
+          radiance += mat->specular * HandleSpecular(ray, depth, ta, sa, normal, cp, pla, ala);
         }
         if (transparency > 0.0f) {
-          radiance += HandleRefraction(ray, depth, ta, sa, normal, mat, collision_point, pla, ala);
+          radiance += mat->transparency * HandleRefraction(ray, depth, ta, sa, normal, cp, pla, ala);
         }
       // } else { // reversed normal, we are inside an object
 
@@ -757,6 +756,7 @@ int main() {
   string test;
   while(true) {
     string filename = "bananskal_";
+    filename += to_string(GAMMA_FACTOR);
     filename += ".ppm";
     cout << "Render DONE!\nWriting to file: " << filename << endl;
     SaveImage(filename.c_str(), frame_buffer);
