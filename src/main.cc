@@ -7,6 +7,10 @@
 #include <glm/glm.hpp>
 #include <random>
 #include <omp.h>
+#include <ctime>
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
 
 using namespace std;
 
@@ -14,10 +18,17 @@ typedef glm::vec3 vec3;
 typedef vec3 Color;
 typedef vector<vector<vec3> > Framebuffer;
 
+<<<<<<< HEAD
 const int WIDTH = 500;
 const int HEIGHT = 500;
 const int SAMPLES = 15000;
 const int MAX_DEPTH = 4; // 0 = only point directly seen by camera
+=======
+const int WIDTH = 256;
+const int HEIGHT = 256;
+const int SAMPLES = 200;
+const int MAX_DEPTH = 2; // 0 = only point directly seen by camera
+>>>>>>> e4b11b37af66b1613321e74199cf4e16978aa2ff
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
 const float DIFFUSE_CONTRIBUTION = .80f;
@@ -716,6 +727,13 @@ void Render(vec3 cam_pos,
 int main() {
   cout << "GI-Ray to the rescue" << endl;
 
+  std::clock_t start = std::clock();
+  #ifdef _OPENMP
+    double start_time = omp_get_wtime();
+  #else
+    std::cout << "\nMultithreading not supported" << std::endl;
+  #endif
+
   // Create camera
   vec3 camera_pos = vec3(0.0f, 0.0f, 4.95f);
   vec3 camera_plane[4];
@@ -751,6 +769,13 @@ int main() {
 
   Render(camera_pos, triangle_array, sphere_array, point_light_array, area_light_array,
        frame_buffer, delta, pixel_center_minimum, SAMPLES);
+
+  double cpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    std::cout << "\nCPU wall time: " << cpu_duration;
+  #ifdef _OPENMP
+    double duration = omp_get_wtime() - start_time;
+    std::cout << "\nTime taken with Multithreading: " << duration << std::endl;
+  #endif
 
   float newGamma = 1.0f;
   string test;
