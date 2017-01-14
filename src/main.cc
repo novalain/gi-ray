@@ -1,6 +1,7 @@
 // TODO: separate depth variables for diffuse, specular and transparent
 #define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -18,26 +19,21 @@ typedef glm::vec3 vec3;
 typedef vec3 Color;
 typedef vector<vector<vec3> > Framebuffer;
 
-<<<<<<< HEAD
-const int WIDTH = 500;
-const int HEIGHT = 500;
-const int SAMPLES = 15000;
-const int MAX_DEPTH = 4; // 0 = only point directly seen by camera
-=======
-const int WIDTH = 256;
-const int HEIGHT = 256;
-const int SAMPLES = 200;
-const int MAX_DEPTH = 2; // 0 = only point directly seen by camera
->>>>>>> e4b11b37af66b1613321e74199cf4e16978aa2ff
+const int WIDTH = 50;
+const int HEIGHT = 50;
+const int SAMPLES = 5000;
+const int MAX_DEPTH = 8; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
 const float DIFFUSE_CONTRIBUTION = .80f;
-float GAMMA_FACTOR = 1.4f;
+float GAMMA_FACTOR = 3.5f;
 
 // Refractive indecis: air = 1.0, glass = 1.5
-const float REFRACTIVE_FACTOR_ENTER_GLASS = 1.0f / 1.5f;
-const float REFRACTIVE_FACTOR_EXIT_GLASS = 1.5f / 1.0f;
-const float CRITICAL_ANGLE = asin(REFRACTIVE_FACTOR_ENTER_GLASS);
+const float REFRACTION_INDEX_AIR = 1.0f;
+const float REFRACTION_INDEX_GLASS = 1.5f;
+const float REFRACTIVE_FACTOR_ENTER_GLASS = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS;
+const float REFRACTIVE_FACTOR_EXIT_GLASS = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR;
+const float CRITICAL_ANGLE = asin(REFRACTIVE_FACTOR_EXIT_GLASS);
 
 default_random_engine generator;
 uniform_real_distribution<float> distribution(0, 1);
@@ -239,7 +235,7 @@ void CreateScene(vector<vec3> &va,
                  vector<Material> &ma,
                  vector<PointLight> &pla,
                  vector<Triangle*> &ala) {
-  // Default materials (whiteish, blackish, redish, greenish, blueish)
+  // Default materials (whiteish, blackish, redish, greenish, blueish. etc..)
   {
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.0f, 0.0f));       // 0 WHITE
     ma.push_back(Material(vec3(0.1f, 0.1f, 0.1f), 1.0f, 0.0f, 0.0f));       // 1 BLACKISH
@@ -248,9 +244,10 @@ void CreateScene(vector<vec3> &va,
     ma.push_back(Material(vec3(0.2f, 0.2f, 1.0f), 1.0f, 0.0f, 0.0f));       // 4 BLUEISH
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.0f, 0.0f, 0.1f)); // 5 WHITE EMMITER
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, 0.0f));       // 6 PERFECT MIRROR
-    ma.push_back(Material(vec3(1.0f, 0.0f, 0.0f), 0.7f, 0.3f, 0.0f));       // 7 RUBY
+    ma.push_back(Material(vec3(1.0f, 0.0f, 0.0f), 0.99f, 0.01f, 0.0f));     // 7 RUBY
     ma.push_back(Material(vec3(0.0f, 1.0f, 0.0f), 0.4f, 0.6f, 0.0f));       // 8 EMERALD
     ma.push_back(Material(vec3(0.0f, 0.0f, 1.0f), 0.7f, 0.3f, 0.0f));       // 9 SAPPHIRE
+    ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 0.0f, 0.0f, 1.0f));       //10 GLASS
   }
   // Create the Cornell Box
   {
@@ -271,13 +268,13 @@ void CreateScene(vector<vec3> &va,
 
   //Create additional geometry
   {
-    //CreateCube(1.25f, 1.25f, 1.25f, va, ta, ala, &ma[4], true, vec3(-2.0f, -1.8f, -1.0f));
+    //CreateCube(2.25f, 2.25f, 2.25f, va, ta, ala, &ma[9], true, vec3(-2.0f, -1.8f, -1.0f));
    // CreateCube(1.4f, 1.4f, 1.4f, va, ta, ala, &ma[2], true, vec3(2.0f, -1.6f, -1.0f));
     // CreateCube(2.0f, 0.1f, 2.0f, va, ta, ala, &ma[5], true, vec3(0.0f, 4.05f, 0.0f));
     CreateFourTriangleQuad(2.0f, 2.0f, va, ta, ala, &ma[5], false, vec3(0.0f, 4.95f, 0.0f));
-    CreateSphere(1.6f, va, sa, &ma[4], vec3(-2.25f, -2.25f, -1.6f));
-    CreateSphere(1.6f, va, sa, &ma[7], vec3(2.25f, -2.25f, -1.4f));
-    CreateSphere(1.f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
+    CreateSphere(1.7f, va, sa, &ma[10], vec3(-2.6f, -2.1f, -0.7f));
+    CreateSphere(1.7f, va, sa, &ma[7], vec3(3.0f, -3.25f, -1.6f));
+    CreateSphere(1.3f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
   }
   //Create Point Lights
   {
@@ -297,12 +294,9 @@ void SaveImage(const char* img_name, Framebuffer &image) {
       float g = image[j][i][1];
       float b = image[j][i][2];
       static unsigned char color[3];
-      // color[0] = (int)(255 * (r < 0 ? 0 : r > 1 ? 1 : r));  // red
-      // color[1] = (int)(255 * (g < 0 ? 0 : g > 1 ? 1 : g));  // green
-      // color[2] = (int)(255 * (b < 0 ? 0 : b > 1 ? 1 : b));  // blue
-      color[0] = (int)(255 * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));  // red
-      color[1] = (int)(255 * pow(g < 0.0f ? 0.0f : g > 1.0f ? 1.0f : g, gamma_factor_inv));  // green
-      color[2] = (int)(255 * pow(b < 0.0f ? 0.0f : b > 1.0f ? 1.0f : b, gamma_factor_inv));  // blue
+      color[0] = (int)(255.f * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));  // red
+      color[1] = (int)(255.f * pow(g < 0.0f ? 0.0f : g > 1.0f ? 1.0f : g, gamma_factor_inv));  // green
+      color[2] = (int)(255.f * pow(b < 0.0f ? 0.0f : b > 1.0f ? 1.0f : b, gamma_factor_inv));  // blue
       (void)fwrite(color, 1, 3, fp);
     }
   }
@@ -315,10 +309,7 @@ void ClearColorBuffer(Color clear_color, Framebuffer &frame_buffer) {
       frame_buffer[x][y] = clear_color;
     }
   }
-}
-
-// TODO     
-// Corresponding MöllerTrumbore For Sphere     
+}   
 
 bool MoellerTrumbore(const Ray &ray, const Triangle &triangle, vec3 &collision_point) {
   vec3 ps = ray.origin;
@@ -340,7 +331,9 @@ bool MoellerTrumbore(const Ray &ray, const Triangle &triangle, vec3 &collision_p
   float u = glm::dot(P, T) / det;
   float v = glm::dot(Q, D) / det;
 
-  if(u >= -0.000001f && v >= -0.000001f && u+v <= 1.000001f && t > -0.000001f) {
+  if (u >= -0.000001f && v >= -0.000001f && u+v <= 1.000001f && t > -0.000001f) {
+  //if (u >= 0.0f && v >= 0.0f && u + v <= 1.000001f && t > 0.0f) {
+
     collision_point = (1.0f - u - v) * v0 + u * v1 + v * v2;
     return true;
   }
@@ -419,43 +412,35 @@ bool GetClosestIntersectionPoint(const Ray &ray,
                                  vec3& normal,
                                  Material* & mat,
                                  vec3 &collision_point) {
-  // cout << "Closest Intersection Point" << endl;
   bool has_found_intersection_point = false;
   vec3 ray_origin = ray.origin;
   int t_length = ta.size();
   for (auto& triangle : ta) {
     vec3 temp_collision_point;
     if (MoellerTrumbore(ray, triangle, temp_collision_point)) {
-    // cout << "Pre-Möller" << endl;
       float z_temp = glm::length(ray_origin - temp_collision_point);
       if (z_temp < z_buffer) {
-        // cout << "\t\tEven found a closer point!" << endl;
         z_buffer = z_temp;
         has_found_intersection_point = true;
         collision_point = temp_collision_point;
         normal = triangle.normal;
         mat = triangle.material;
       }
-      // cout << "Möller EXIT" << endl;
     }
   }
   for (auto& sphere : sa) {
     vec3 temp_collision_point;
     if (SphereIntersection(ray, sphere, temp_collision_point)) {
-    // cout << "Pre-Möller" << endl;
       float z_temp = glm::length(ray_origin - temp_collision_point);
       if (z_temp < z_buffer) {
-        // cout << "\t\tEven found a closer point!" << endl;
         z_buffer = z_temp;
         has_found_intersection_point = true;
         collision_point = temp_collision_point;
         normal = glm::normalize(collision_point - *sphere.position);
         mat = sphere.material;
       }
-      // cout << "Möller EXIT" << endl;
     }
   }
-   // cout << "\tClosest Intersection Point END" << endl;
   return has_found_intersection_point;
 }
 
@@ -541,7 +526,6 @@ Color HandleDiffuse(int depth,
                     const vec3& collision_point,
                     const vector<PointLight> &pla,
                     const vector<Triangle*> &ala) {
-  // cout << "\tHandling diffuse case!" << endl;
   vec3 w = normal;
   // Generalized formula for finding tangent u given a unit length normal vector w
   vec3 u = glm::normalize(glm::cross(fabs(w.x) > 0.1f ? vec3(0.0f, 1.0f, 0.0f) : vec3(1.0f, 0.0f, 0.0f), w));
@@ -550,37 +534,36 @@ Color HandleDiffuse(int depth,
   // Random direction d within hemisphere
   // Random angle
   float r1 = PI2 * distribution(generator);
-  // float r1 = PI2 * getRandom();
   // Random distance from center
   float r2 = distribution(generator);
-  // float r2 = getRandom();
   float r2s = sqrtf(r2);
   vec3 d = glm::normalize(u * (float)cos(r1) * r2s + v*(float)sin(r1) * r2s + w * sqrtf(1.0f - r2));
 
   vec3 reflection_point_origin = collision_point + w * 0.00001f;
   Ray ray = Ray(reflection_point_origin, d);
-  // cout << "\t\tDiffuse DONE!!" << endl;
   return DIFFUSE_CONTRIBUTION * Raytrace(ray, ta, sa, pla, ala, ++depth);
 }
 
 Color HandleSpecular(const Ray& ray,
-                     int depth,
-                     const vector<Triangle>& ta,
-                     const vector<Sphere>& sa,
-                     const vec3& normal,
-                     const vec3& collision_point,
-                     const vector<PointLight>& pla,
-                     const vector<Triangle*>& ala/*,
-                     reverse_normal = false*/) {
-  // vec3 n = reverse_normal ? -triangle->normal, triangle->normal;
+  int depth,
+  const vector<Triangle>& ta,
+  const vector<Sphere>& sa,
+  const vec3& normal,
+  const vec3& collision_point,
+  const vector<PointLight>& pla,
+  const vector<Triangle*>& ala) {
   vec3 n = normal;
   vec3 d = ray.direction;
-  if (glm::dot(n,d) > 0) {
+  // TODO: THIS IS AN ISSUE! it should never happen, right?
+  if (glm::dot(n, d) > 0) {
     n = -n;
+    //cout << "REVERSING NORMAL IN SPECULAR - THIS MUST BE WRONG - SHOULD NEVER HAPPEN?!" << endl;
+  } else {
+    //cout << "NOT REVERSING NORMAL! THIS SHOULD BE CORRECT?!" << endl;
   }
 
   vec3 reflection_point_origin = collision_point + n * 0.00001f;
-  vec3 reflection_direction = d - 2 * (glm::dot(d, n))*n;
+  vec3 reflection_direction = d - 2.f * (glm::dot(d, n))*n;
   Ray reflection_ray = Ray(reflection_point_origin, reflection_direction);
   return Raytrace(reflection_ray, ta, sa, pla, ala, ++depth);
 }
@@ -592,33 +575,47 @@ Color HandleRefraction(const Ray& ray,
                        const vec3& normal,
                        const vec3& collision_point,
                        const vector<PointLight>& pla,
-                       const vector<Triangle*>& ala/*,
-                       reverse_normal = false*/) {
-  vec3 n = normal;
+                       const vector<Triangle*>& ala) {
+  vec3 n = normal; // outwards normal
   vec3 I = ray.direction;
-  // assert(std::abs(1.0f - (float)glm::length(p.get_normal())) < EPSILON);
-  // assert(std::abs(1.0f - (float) glm::length(I)) < EPSILON);
   float I_dot_n = glm::dot(n,I);
-  float refractive_factor;
-
+  float refractive_factor, n1, n2, alpha;
+  
   // From outside going in
   if (I_dot_n < 0.0f) {
+    n1 = REFRACTION_INDEX_AIR;
+    n2 = REFRACTION_INDEX_GLASS;
     refractive_factor = REFRACTIVE_FACTOR_ENTER_GLASS;
+    alpha = acos(-I_dot_n);
   } else { // From inside going out
+    n1 = REFRACTION_INDEX_GLASS;
+    n2 = REFRACTION_INDEX_AIR;
     refractive_factor = REFRACTIVE_FACTOR_EXIT_GLASS;
-    n = -n;
-    // I_dot_n = glm::dot(n,I); // TODO: this might cause errors.. try comment out if weird behaviour
-    float alpha = acos(I_dot_n);
+    n = -n; // inwards normal
+    alpha = acos(I_dot_n);
+    I_dot_n *= -1;// glm::dot(n, -I);
     if ( alpha > CRITICAL_ANGLE ) { // total inner reflection occurs (only reflection term)
-      return Color(0.0f, 0.0f, 0.0f);
+      return HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);
     }
   }
-
-  vec3 T = refractive_factor * I - n * (refractive_factor * I_dot_n +
+  vec3 Tvec = refractive_factor * I + n * (-refractive_factor * I_dot_n -
       sqrtf(1.f - refractive_factor * refractive_factor * (1.f - I_dot_n * I_dot_n)));
-  vec3 refraction_point_origin = collision_point + n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
-  Ray refraction_ray = Ray(refraction_point_origin, T);
-  return Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
+  vec3 refraction_point_origin = collision_point - n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
+  Ray refraction_ray = Ray(refraction_point_origin, Tvec);
+
+  // Distribute radiance in reflection and refraction directions
+  float c = cos(alpha);
+  float n1c = n1*c;
+  float n2c = n2*c;
+  float sr = sqrt(1.0f - pow(refractive_factor * sin(alpha), 2.f));
+  float n2sr = n2*sr;
+  float n1sr = n1*sr;
+  float Rs = pow((n1c - n2sr) / (n1c + n2sr), 2.f);
+  float Rp = pow((n1sr - n2c) / (n1sr + n2c), 2.f);
+  float R = (Rs + Rp) / 2.f;
+  float T = 1.f - R;
+
+  return T * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth) + R * HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);;
 }
 
 Color Raytrace(const Ray& ray,
@@ -634,21 +631,13 @@ Color Raytrace(const Ray& ray,
     return radiance;
   }
 
-  // string temp;
-  // for (int i = 0; i <= depth; i++) {
-  //   temp += "\t";
-  // }
-  // cout << temp << "Raytrace at depth: " << depth << endl;
-
   float z_buffer = FLT_MAX;
-  Triangle* triangle;
   vec3 normal;
   Material* mat;
   vec3 collision_point;
 
   // Get the ray intersection with the nearest surface
   if (GetClosestIntersectionPoint(ray, ta, sa, z_buffer, normal, mat, collision_point)) {
-    // Self emmitance - Required for area light sources
     float diffuse = mat->diffuse;
     float specular = mat->specular;
     float transparency = mat->transparency;
@@ -663,63 +652,58 @@ Color Raytrace(const Ray& ray,
     // Direct Illumination - Required for point lights
     //radiance += HandleDirectIllumination(pla, ala, ta, triangle, collision_point);
 
-    if (diffuse > 0.0f) {
+    if (diffuse > EPSILON) {//0.0f) {
       radiance += mat->diffuse * HandleDiffuse(depth, ta, sa, normal, cp, pla, ala) *  mat->color;
     }
 
-    // if (transparency > 0.0f) {
-      // If outside going into object
-      // if (glm::dot(triangle.normal, ray.direction) < 0.0f) {
-        if (specular > 0.0f) {
-          radiance += mat->specular * HandleSpecular(ray, depth, ta, sa, normal, cp, pla, ala);
-        }
-        if (transparency > 0.0f) {
-          radiance += mat->transparency * HandleRefraction(ray, depth, ta, sa, normal, cp, pla, ala);
-        }
-      // } else { // reversed normal, we are inside an object
-
-      // }
-    // }
-    return self_emmitance + radiance; //* triangle->material->color;
+    if (specular > EPSILON) {//0.0f) {
+      radiance += mat->specular * HandleSpecular(ray, depth, ta, sa, normal, cp, pla, ala);
+    }
+    if (transparency > EPSILON) {//0.0f) {
+      radiance += mat->transparency * HandleRefraction(ray, depth, ta, sa, normal, cp, pla, ala);
+    }
+    return self_emmitance + radiance;
   }
-                                         
-  //TODO: SAME THING FOR SPHERES         
                                          
   cerr << "\nLigg här och gnag... " << endl;
   return radiance;
 }
 
 void Render(vec3 cam_pos,
-            vector<Triangle> &ta,
-            vector<Sphere> &sa,
-            vector<PointLight> &pla,
-            vector<Triangle*> &ala,
+            const vector<Triangle>& ta,
+            const vector<Sphere>& sa,
+            const vector<PointLight>& pla,
+            const vector<Triangle*> &ala,
             Framebuffer &frame_buffer,
-            float delta,
-            float pixel_center_minimum,
-            int spp = 1) {
+            const float& delta,
+            const float& pixel_center_minimum,
+            const double& start_time,
+            const int& spp) {
   float delta2 = delta - (delta / 2.0f);
+  float sppf = static_cast<float>(spp);
   cout << "Rendering!" << endl;
   #pragma omp parallel for schedule(dynamic, 1)
   for (int i = 0; i < WIDTH; i++) {
-    // fprintf(stderr, "\r\tProgress:  %1.2f%%", 100. * i / (WIDTH - 1));
     for (int j = 0; j < HEIGHT; j++) {
       Color temp_color = Color(0.0f, 0.0f, 0.0f);
       for (int s = 0; s < spp; s++) {
-        // cout << "Rendering pixel (" << i << ", " << j << ")" << endl;
         float random_x = distribution(generator) * delta2;
         float random_y = distribution(generator) * delta2;
 
         vec3 pixel_random_point =
             vec3(i * delta + pixel_center_minimum + random_x,
                  j * delta + pixel_center_minimum + random_y, 4.0f);
-        Ray ray(pixel_random_point, pixel_random_point - cam_pos);
+        const Ray ray(pixel_random_point, pixel_random_point - cam_pos);
         temp_color = temp_color + Raytrace(ray, ta, sa, pla, ala, 0);
-        // cout << "Rendering pixel (" << i << ", " << j << ") DONE!" << endl;
       }
-      frame_buffer[i][j] = (temp_color / (float)spp);
+      frame_buffer[i][j] = (temp_color / sppf);
     }
-    fprintf(stderr, "\r\tRendering progress:  %1.2f%%", 100.*i/(WIDTH-1));
+    float percentage = 100.f*static_cast<float>(i) / (static_cast<float>(WIDTH) - 1.f);
+    double elapsed_time = ((std::clock() - start_time) / ((double)CLOCKS_PER_SEC * 60.0));
+    double est_total_time = (100.0/(percentage))*elapsed_time;
+    double est_time_left = est_total_time - elapsed_time;
+    fprintf(stderr, "\r\tProgress:  %1.2f%%, \tEstimated time left:  %.1f min", percentage, est_time_left);
+    //fprintf(stderr, "\r\tRender Progress:  %1.2f%%, \tElapsed time:  %.1f min, \tEstimated total time:  %.1f min, \tEstimated time left:  %.1f min", percentage, elapsed_time, est_total_time, est_time_left);
   }
   cout << endl;
 }
@@ -729,6 +713,7 @@ int main() {
 
   std::clock_t start = std::clock();
   #ifdef _OPENMP
+    std::cout << "\nUsing multiple CPU cores!" << std::endl;
     double start_time = omp_get_wtime();
   #else
     std::cout << "\nMultithreading not supported" << std::endl;
@@ -756,19 +741,19 @@ int main() {
   vector<PointLight>  point_light_array;
   vector<Triangle*>   area_light_array;
 
-  vertex_array.reserve(100);
-  material_array.reserve(50);
-  triangle_array.reserve(100);
-  point_light_array.reserve(10);
-  area_light_array.reserve(50);
-  sphere_array.reserve(50);
+  vertex_array.reserve(128);
+  material_array.reserve(32);
+  triangle_array.reserve(128);
+  //point_light_array.reserve();
+  area_light_array.reserve(64);
+  sphere_array.reserve(8);
 
   cout << "Creating the scene..." << endl;
   CreateScene(vertex_array, triangle_array, sphere_array, material_array, point_light_array,
              area_light_array);
 
   Render(camera_pos, triangle_array, sphere_array, point_light_array, area_light_array,
-       frame_buffer, delta, pixel_center_minimum, SAMPLES);
+       frame_buffer, delta, pixel_center_minimum, start, SAMPLES);
 
   double cpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     std::cout << "\nCPU wall time: " << cpu_duration;
@@ -779,10 +764,12 @@ int main() {
 
   float newGamma = 1.0f;
   string test;
-  while(true) {
-    string filename = "bananskal_";
-    filename += to_string(GAMMA_FACTOR);
-    filename += ".ppm";
+  stringstream ss;
+  ss << "cornell_" << WIDTH << "x" << HEIGHT << "_" << SAMPLES << "spp_" << MAX_DEPTH << "bounces_";
+  while (true) {
+    stringstream gs;
+    gs << setprecision(2) << GAMMA_FACTOR;
+    string filename = ss.str() + gs.str() + "gamma.ppm";
     cout << "Render DONE!\nWriting to file: " << filename << endl;
     SaveImage(filename.c_str(), frame_buffer);
     cout << "Enter new gamma value: " << endl;
