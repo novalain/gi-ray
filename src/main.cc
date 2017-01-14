@@ -1,5 +1,13 @@
 // TODO: separate depth variables for diffuse, specular and transparent
 
+// (size x size x samples x depth)
+
+// OS X
+// 256 x 256 x 200 x 2 => 127s (without -O3)
+// 256 x 256 x 200 x 2 => 16s
+// 512 x 512 x 1000 x 2 => 346s
+// 512 x 512 x 5000 x 2 => 1696s
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -11,6 +19,7 @@
 #ifdef _OPENMP
   #include <omp.h>
 #endif
+#include <cstring>
 
 using namespace std;
 
@@ -18,9 +27,9 @@ typedef glm::vec3 vec3;
 typedef vec3 Color;
 typedef vector<vector<vec3> > Framebuffer;
 
-const int WIDTH = 256;
-const int HEIGHT = 256;
-const int SAMPLES = 200;
+const int WIDTH = 150;
+const int HEIGHT = 150;
+const int SAMPLES = 16;
 const int MAX_DEPTH = 2; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
@@ -101,6 +110,111 @@ struct Ray {
       : origin(ori), direction(glm::normalize(dir)) {}
 };
 
+/** Slightly modified version from opengl-tutorial.org,
+    loads a simple blender model */
+bool loadOBJ(const char* path,
+             std::vector<glm::vec3>& va,
+             std::vector<Triangle>& ta,
+             std::vector<Material>& ma) {
+  printf("Loading OBJ file %s...\n", path);
+
+  std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
+  std::vector<glm::vec3> temp_vertices;
+  std::vector<glm::vec2> temp_uvs;
+  std::vector<glm::vec3> temp_normals;
+
+  FILE* file = fopen(path, "r");
+  if (file == NULL) {
+    printf(
+        "Impossible to open the file ! Are you in the right path ? See "
+        "Tutorial 1 for details\n");
+    getchar();
+    return false;
+  }
+
+  while (1) {
+    char lineHeader[128];
+    // read the first word of the line
+    int res = fscanf(file, "%s", lineHeader);
+    if (res == EOF)
+      break;  // EOF = End Of File. Quit the loop.
+
+    if (strcmp(lineHeader, "v") == 0) {
+      glm::vec3 vertex;
+      fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
+      temp_vertices.push_back(vertex);
+    } else if (strcmp(lineHeader, "vt") == 0) {
+      glm::vec2 uv;
+      fscanf(file, "%f %f\n", &uv.x, &uv.y);
+      uv.y = -uv.y;  // Invert V coordinate since we will only use DDS texture,
+                     // which are inverted. Remove if you want to use TGA or BMP
+                     // loaders.
+      temp_uvs.push_back(uv);
+    } else if (strcmp(lineHeader, "vn") == 0) {
+      glm::vec3 normal;
+      fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
+      temp_normals.push_back(normal);
+    } else if (strcmp(lineHeader, "f") == 0) {
+      std::string vertex1, vertex2, vertex3;
+      unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+      int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n",
+                           &vertexIndex[0], &uvIndex[0], &normalIndex[0],
+                           &vertexIndex[1], &uvIndex[1], &normalIndex[1],
+                           &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
+      if (matches != 9) {
+        printf(
+            "File can't be read by our simple parser :-( Try exporting with "
+            "other options\n");
+        return false;
+      }
+
+      vertexIndices.push_back(vertexIndex[0]);
+      vertexIndices.push_back(vertexIndex[1]);
+      vertexIndices.push_back(vertexIndex[2]);
+      uvIndices.push_back(uvIndex[0]);
+      uvIndices.push_back(uvIndex[1]);
+      uvIndices.push_back(uvIndex[2]);
+      normalIndices.push_back(normalIndex[0]);
+      normalIndices.push_back(normalIndex[1]);
+      normalIndices.push_back(normalIndex[2]);
+    } else {
+      // Probably a comment, eat up the rest of the line
+      char stupidBuffer[1000];
+      fgets(stupidBuffer, 1000, file);
+    }
+  }
+
+  std::vector<glm::vec3> vertices;
+  int count = 0;
+  // For each vertex of each triangle
+  for (unsigned int i = 0; i < vertexIndices.size(); i++) {
+    // Get the indices of its attributes
+    unsigned int vertexIndex = vertexIndices[i];
+    unsigned int uvIndex = uvIndices[i];
+    unsigned int normalIndex = normalIndices[i];
+
+    // Get the attributes thanks to the index
+    glm::vec3 vertex = temp_vertices[vertexIndex - 1];
+    glm::vec2 uv = temp_uvs[uvIndex - 1];
+    glm::vec3 normal = temp_normals[normalIndex - 1];
+    // Put the attributes in buffers
+    vertices.push_back(vertex);
+
+    if (count == 2) {
+      int v_idx = va.size();
+      va.push_back(vertices[i - 0] * 2.f);
+      va.push_back(vertices[i - 1] * 2.f);
+      va.push_back(vertices[i - 2] * 2.f);
+      ta.push_back(Triangle(&va[v_idx + 0], &va[v_idx + 1], &va[v_idx + 2],
+                            &ma[6]));  // front bottom right
+      count = 0;
+      continue;
+    }
+    count++;
+  }
+  return true;
+}
+
 void CreateSphere(float r,
                   vector<vec3>& va,
                   vector<Sphere>& sa,
@@ -122,7 +236,7 @@ void CreateCube(float w,
                 vec3 center_position = vec3(0.0f, 0.0f, 0.0f)) {
   int v_idx = va.size();
   // Create Vertices
-  {
+
     float dx = w / 2.0f;
     float dy = h / 2.0f;
     float dz = d / 2.0f;
@@ -138,7 +252,16 @@ void CreateCube(float w,
     va.push_back(vec3(-dx + cx, -dy + cy, -dz + cz)); // left  bottom back
     va.push_back(vec3(-dx + cx,  dy + cy, -dz + cz)); // left  top    back
     va.push_back(vec3( dx + cx,  dy + cy, -dz + cz)); // right top    back
-  }
+
+    vec3 v0 = vec3(-dx + cx, -dy + cy,  dz + cz);
+    vec3 v1 = vec3( dx + cx, -dy + cy,  dz + cz);
+    vec3 v2 = vec3( dx + cx,  dy + cy,  dz + cz);
+    vec3 v3 = vec3(-dx + cx,  dy + cy,  dz + cz);
+    vec3 v4 = vec3( dx + cx, -dy + cy, -dz + cz);
+    vec3 v5 = vec3(-dx + cx, -dy + cy, -dz + cz);
+    vec3 v6 = vec3(-dx + cx,  dy + cy, -dz + cz);
+    vec3 v7 = vec3( dx + cx,  dy + cy, -dz + cz);
+  
   // Create the triangles
   {
     if (outwards_normals) {
@@ -268,7 +391,10 @@ void CreateScene(vector<vec3> &va,
     CreateCube(1.4f, 1.4f, 1.4f, va, ta, ala, &ma[7], true, vec3(2.0f, -1.6f, -1.0f));
     // CreateCube(2.0f, 0.1f, 2.0f, va, ta, ala, &ma[5], true, vec3(0.0f, 4.05f, 0.0f));
     CreateFourTriangleQuad(2.0f, 2.0f, va, ta, ala, &ma[5], false, vec3(0.0f, 4.95f, 0.0f));
-    CreateSphere(1.f, va, sa, &ma[6], vec3(0.f, 0.f, -1.5f));
+    // Create Monkey
+    bool res =
+      loadOBJ("data/suzanne.obj", va, ta, ma);
+    //CreateSphere(1.f, va, sa, &ma[6], vec3(0.f, 0.f, -1.5f));
   }
   //Create Point Lights
   {
@@ -750,16 +876,16 @@ int main() {
   vector<PointLight>  point_light_array;
   vector<Triangle*>   area_light_array;
 
-  vertex_array.reserve(100);
+  vertex_array.reserve(100 + 2904);
   material_array.reserve(50);
-  triangle_array.reserve(100);
+  triangle_array.reserve(100 + 2904);
   point_light_array.reserve(10);
   area_light_array.reserve(50);
   sphere_array.reserve(50);
 
   cout << "Creating the scene..." << endl;
-  CreateScene(vertex_array, triangle_array, sphere_array, material_array, point_light_array,
-             area_light_array);
+  CreateScene(vertex_array, triangle_array, sphere_array, material_array,
+              point_light_array, area_light_array);
 
   Render(camera_pos, triangle_array, sphere_array, point_light_array, area_light_array,
        frame_buffer, delta, pixel_center_minimum, SAMPLES);

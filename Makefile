@@ -1,4 +1,4 @@
-CC=clang++
+CC=g++-6 -fopenmp -O3
 src=./src/
 include=-I./include/
 bin=./bin/
