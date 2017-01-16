@@ -1,4 +1,6 @@
 // TODO: separate depth variables for diffuse, specular and transparent
+// TODO: change all HandleSpecular, HandleDiffuse etc. to voids or bools.. pass color by reference?
+// TODO: move depth into ray class?
 
 #define _USE_MATH_DEFINES // Needed to run in windows/visual studio
 
@@ -30,10 +32,10 @@ typedef glm::vec3 vec3;
 typedef vec3 Color;
 typedef vector<vector<vec3> > Framebuffer;
 
-const int WIDTH = 50;
-const int HEIGHT = 50;
+const int WIDTH = 200;
+const int HEIGHT = 200;
 const int SAMPLES = 5000;
-const int MAX_DEPTH = 8; // 0 = only point directly seen by camera
+const int MAX_DEPTH = 4; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
 const float DIFFUSE_CONTRIBUTION = .80f;
@@ -367,30 +369,13 @@ void CreateScene(vector<vec3> &va,
     ma.push_back(Material(vec3(1.0f, 0.2f, 0.2f), 1.0f, 0.0f, 0.0f));       // 2 REDISH
     ma.push_back(Material(vec3(0.2f, 1.0f, 0.2f), 1.0f, 0.0f, 0.0f));       // 3 GREENISH
     ma.push_back(Material(vec3(0.2f, 0.2f, 1.0f), 1.0f, 0.0f, 0.0f));       // 4 BLUEISH
-    ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.0f, 0.0f, 0.1f)); // 5 WHITE EMMITER
+    ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 1.0f, 0.0f, 0.0f, 0.05f)); // 5 WHITE EMMITER
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 0.0f, 1.0f, 0.0f));       // 6 PERFECT MIRROR
-    ma.push_back(Material(vec3(1.0f, 0.0f, 0.0f), 0.99f, 0.01f, 0.0f));     // 7 RUBY
+    ma.push_back(Material(vec3(1.0f, 0.0f, 0.0f), 1.0f, 0.0f, 0.0f));     // 7 RUBY
     ma.push_back(Material(vec3(0.0f, 1.0f, 0.0f), 0.4f, 0.6f, 0.0f));       // 8 EMERALD
     ma.push_back(Material(vec3(0.0f, 0.0f, 1.0f), 0.7f, 0.3f, 0.0f));       // 9 SAPPHIRE
     ma.push_back(Material(vec3(1.0f, 1.0f, 1.0f), 0.0f, 0.0f, 1.0f));       //10 GLASS
   }
-  // Create the Cornell Box
-  {
-    CreateCube(10.0f, 10.0f, 10.0f, va, ta, ala, &ma[0], false, vec3(0.0f, 0.0f, 0.0f));
-    // ta[0].material = &ma[6]; // FRONT
-    // ta[1].material = &ma[6];
-    ta[2].material = &ma[4]; // RIGHT SIDE
-    ta[3].material = &ma[4];
-    ta[4].material = &ma[3]; // BACK
-    ta[5].material = &ma[3];
-    ta[6].material = &ma[2]; // LEFT
-    ta[7].material = &ma[2];
-    // ta[8].material = &ma[0]; // BOTTOM
-    // ta[9].material = &ma[0];
-    // ta[10].material = &ma[6]; // TOP
-    // ta[11].material = &ma[6];
-  }
-
   //Create additional geometry
   {
     //CreateCube(2.25f, 2.25f, 2.25f, va, ta, ala, &ma[9], true, vec3(-2.0f, -1.8f, -1.0f));
@@ -398,12 +383,31 @@ void CreateScene(vector<vec3> &va,
     // CreateCube(2.0f, 0.1f, 2.0f, va, ta, ala, &ma[5], true, vec3(0.0f, 4.05f, 0.0f));
     CreateFourTriangleQuad(2.0f, 2.0f, va, ta, ala, &ma[5], false, vec3(0.0f, 4.95f, 0.0f));
     CreateSphere(1.7f, va, sa, &ma[10], vec3(-2.6f, -2.1f, -0.7f));
-    CreateSphere(1.7f, va, sa, &ma[7], vec3(3.0f, -3.25f, -1.6f));
-    CreateSphere(1.3f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
+    //CreateSphere(1.7f, va, sa, &ma[7], vec3(3.0f, -3.25f, -1.6f));
+    //CreateSphere(1.3f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
     // Create Monkey
     //bool res =
       //loadOBJ("data/suzanne.obj", va, ta, ma);
   }
+
+  // Create the Cornell Box
+  {
+    CreateCube(10.0f, 10.0f, 10.0f, va, ta, ala, &ma[0], false, vec3(0.0f, 0.0f, 0.0f));
+    int t_idx = ta.size()-12;
+    // ta[t_idx+0].material = &ma[6]; // FRONT
+    // ta[t_idx+1].material = &ma[6];
+    ta[t_idx+2].material = &ma[4]; // RIGHT SIDE
+    ta[t_idx+3].material = &ma[4];
+    ta[t_idx+4].material = &ma[3]; // BACK
+    ta[t_idx+5].material = &ma[3];
+    ta[t_idx+6].material = &ma[2]; // LEFT
+    ta[t_idx+7].material = &ma[2];
+    // ta[t_idx+8].material = &ma[0]; // BOTTOM
+    // ta[t_idx+9].material = &ma[0];
+    // ta[t_idx+10].material = &ma[6]; // TOP
+    // ta[t_idx+11].material = &ma[6];
+  }
+
   //Create Point Lights
   {
     // int v_idx = va.size();
@@ -418,13 +422,22 @@ void SaveImage(const char* img_name, Framebuffer &image) {
   (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
   for (int i = WIDTH - 1; i >= 0; i--) {
     for (int j = 0 ; j < HEIGHT; j++) {
-      float r = image[j][i][0];
+      static unsigned char color[3];
+      for (int c = 0; c < 3; c++) {
+        float r = image[j][i][c];
+        color[c] = (int)(255 * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));
+        if (color[c] < 0 || color[c] > 255)
+          cout << "\nWTF!!\n" << endl;
+      }
+      /*float r = image[j][i][0];
       float g = image[j][i][1];
       float b = image[j][i][2];
       static unsigned char color[3];
-      color[0] = (int)(255.f * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));  // red
-      color[1] = (int)(255.f * pow(g < 0.0f ? 0.0f : g > 1.0f ? 1.0f : g, gamma_factor_inv));  // green
-      color[2] = (int)(255.f * pow(b < 0.0f ? 0.0f : b > 1.0f ? 1.0f : b, gamma_factor_inv));  // blue
+      color[0] = (int)(255 * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));  // red
+      color[1] = (int)(255 * pow(g < 0.0f ? 0.0f : g > 1.0f ? 1.0f : g, gamma_factor_inv));  // green
+      color[2] = (int)(255 * pow(b < 0.0f ? 0.0f : b > 1.0f ? 1.0f : b, gamma_factor_inv));  // blue
+      */
+
       (void)fwrite(color, 1, 3, fp);
     }
   }
@@ -453,13 +466,17 @@ bool MoellerTrumbore(const Ray &ray, const Triangle &triangle, vec3 &collision_p
   vec3 P = glm::cross(D, E2);
 
   float det = glm::dot(P, E1);
+  if (det < EPSILON && det > -EPSILON) {
+    return false;
+  }
+  float inv_det = 1.f / det;
 
   vec3 Q = glm::cross(T, E1);
-  float t = glm::dot(Q,E2) / det;
-  float u = glm::dot(P, T) / det;
-  float v = glm::dot(Q, D) / det;
+  float t = glm::dot(Q,E2) * inv_det;
+  float u = glm::dot(P, T) * inv_det;
+  float v = glm::dot(Q, D) * inv_det;
 
-  if (u >= -0.000001f && v >= -0.000001f && u+v <= 1.000001f && t > -0.000001f) {
+  if (!(u < 0) && !(v < 0) && u+v < 1.000001f && t > EPSILON) {
   //if (u >= 0.0f && v >= 0.0f && u + v <= 1.000001f && t > 0.0f) {
 
     collision_point = (1.0f - u - v) * v0 + u * v1 + v * v2;
@@ -490,19 +507,18 @@ float ShadowRay(const Ray& ray,
   return o_light_factor;
 }
 
-bool SolveQuadratic(const float& a,
-                    const float& b,
+bool SolveQuadratic(const float& b,
                     const float& c,
                     float& x0,
                     float& x1) {
-  float discr = b * b - 4 * a * c;
+  float discr = b * b - 4 * c;
   if (discr < 0) {
     return false;
   } else if (discr == 0) {
-    x0 = x1 = -0.5f * b / a;
+    x0 = x1 = -0.5f * b;
   } else {
     float q = (b > 0) ? -0.5f * (b + sqrt(discr)) : -0.5f * (b - sqrt(discr));
-    x0 = q / a;
+    x0 = q;
     x1 = c / q;
   }
   if (x0 > x1) {
@@ -515,11 +531,11 @@ bool SphereIntersection(const Ray &ray, const Sphere &sphere, vec3 &collision_po
   vec3 L = ray.origin - *sphere.position;
   vec3 dir = ray.direction;
   float radius2 = sphere.radius * sphere.radius;
-  float a = glm::dot(dir, dir);
+  //float a = glm::dot(dir, dir);
   float b = 2 * glm::dot(dir, L);
   float c = glm::dot(L, L) - radius2;
   float t0, t1;
-  if (!SolveQuadratic(a, b, c, t0, t1)) {
+  if (!SolveQuadratic(b, c, t0, t1)) {
     return false;
   }
   if (t0 < 0) {
@@ -533,6 +549,35 @@ bool SphereIntersection(const Ray &ray, const Sphere &sphere, vec3 &collision_po
   // return std::make_unique<IntersectionPoint>(intersection_point, normal, material_, t0);
 }
 
+bool SphereIntersectionNEW(const Ray &ray, const Sphere &sphere, vec3 &collision_point) {
+  vec3 l = ray.direction;
+  float r2 = sphere.radius * sphere.radius;
+  vec3 oc = ray.origin - *sphere.position;
+  float loc = glm::dot(l, oc);
+  float sr = pow(loc, 2.f) - glm::dot(oc, oc) + r2;
+  // cant take square root of a negative number => no solution
+  if (sr < 0) {//< EPSILON) {
+    return false;
+  } else if (sr < EPSILON) {
+    collision_point = ray.origin + l * -loc;
+    return true;
+  }
+  sr = sqrt(sr);
+  float d1 = -loc + sr;
+  float d2 = -loc - sr;
+  
+  if (d2 > EPSILON) {
+    collision_point = ray.origin + l * d2;
+  }  else {
+    if (d1 < EPSILON) {
+      return false;
+    }
+    collision_point = ray.origin + l * d1;
+  }
+
+  return true;
+}
+
 bool GetClosestIntersectionPoint(const Ray &ray,
                                  const vector<Triangle>& ta,
                                  const vector<Sphere>& sa,
@@ -543,19 +588,6 @@ bool GetClosestIntersectionPoint(const Ray &ray,
   bool has_found_intersection_point = false;
   vec3 ray_origin = ray.origin;
   int t_length = ta.size();
-  for (auto& triangle : ta) {
-    vec3 temp_collision_point;
-    if (MoellerTrumbore(ray, triangle, temp_collision_point)) {
-      float z_temp = glm::length(ray_origin - temp_collision_point);
-      if (z_temp < z_buffer) {
-        z_buffer = z_temp;
-        has_found_intersection_point = true;
-        collision_point = temp_collision_point;
-        normal = triangle.normal;
-        mat = triangle.material;
-      }
-    }
-  }
   for (auto& sphere : sa) {
     vec3 temp_collision_point;
     if (SphereIntersection(ray, sphere, temp_collision_point)) {
@@ -566,6 +598,19 @@ bool GetClosestIntersectionPoint(const Ray &ray,
         collision_point = temp_collision_point;
         normal = glm::normalize(collision_point - *sphere.position);
         mat = sphere.material;
+      }
+    }
+  }
+  for (auto& triangle : ta) {
+    vec3 temp_collision_point;
+    if (MoellerTrumbore(ray, triangle, temp_collision_point)) {
+      float z_temp = glm::length(ray_origin - temp_collision_point);
+      if (z_temp < z_buffer) {
+        z_buffer = z_temp;
+        has_found_intersection_point = true;
+        collision_point = temp_collision_point;
+        normal = triangle.normal;
+        mat = triangle.material;
       }
     }
   }
@@ -710,7 +755,7 @@ Color HandleRefraction(const Ray& ray,
   float refractive_factor, n1, n2, alpha;
   
   // From outside going in
-  if (I_dot_n < 0.0f) {
+  if (I_dot_n < 0) {
     n1 = REFRACTION_INDEX_AIR;
     n2 = REFRACTION_INDEX_GLASS;
     refractive_factor = REFRACTIVE_FACTOR_ENTER_GLASS;
@@ -723,7 +768,8 @@ Color HandleRefraction(const Ray& ray,
     alpha = acos(I_dot_n);
     I_dot_n *= -1;// glm::dot(n, -I);
     if ( alpha > CRITICAL_ANGLE ) { // total inner reflection occurs (only reflection term)
-      return HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);
+      const vec3 reflection_normal = n;
+      return HandleSpecular(ray, depth, ta, sa, reflection_normal, collision_point, pla, ala);
     }
   }
   vec3 Tvec = refractive_factor * I + n * (-refractive_factor * I_dot_n -
@@ -742,8 +788,16 @@ Color HandleRefraction(const Ray& ray,
   float Rp = pow((n1sr - n2c) / (n1sr + n2c), 2.f);
   float R = (Rs + Rp) / 2.f;
   float T = 1.f - R;
+  const vec3 reflection_normal = n; // FULLÖSNING
+  if (T < EPSILON) {
+    //cout << "\nT: " << T << "\tR: " << R << endl;
+    return HandleSpecular(ray, depth, ta, sa,  reflection_normal, collision_point, pla, ala);
+  } else if (R < EPSILON) {
+    cout << " \nR: " << R << "\tT: " << T << endl;
+    return Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
+  }
 
-  return T * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth) + R * HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);;
+  return T * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth) + R * HandleSpecular(ray, depth, ta, sa, reflection_normal, collision_point, pla, ala);
 }
 
 Color Raytrace(const Ray& ray,
@@ -756,7 +810,7 @@ Color Raytrace(const Ray& ray,
 
   // BREAK RECURISVENESS IF MAX DEPTH HAS BEEN REACHED
   if (depth > MAX_DEPTH) {
-    return radiance;
+    return Color(0.0f,1.0f,0.0f);// radiance;
   }
 
   float z_buffer = FLT_MAX;
@@ -773,7 +827,7 @@ Color Raytrace(const Ray& ray,
     const vec3 cp = collision_point;
 
     Color self_emmitance = Color(0.0f, 0.0f, 0.0f);
-    if(emmitance > 0.0f) {
+    if(emmitance > EPSILON) {
       self_emmitance = (1.0f + emmitance) * mat->color;
     }
 
@@ -781,20 +835,23 @@ Color Raytrace(const Ray& ray,
     //radiance += HandleDirectIllumination(pla, ala, ta, triangle, collision_point);
 
     if (diffuse > EPSILON) {//0.0f) {
-      radiance += mat->diffuse * HandleDiffuse(depth, ta, sa, normal, cp, pla, ala) *  mat->color;
+      radiance += diffuse * HandleDiffuse(depth, ta, sa, normal, cp, pla, ala) *  mat->color;
     }
 
     if (specular > EPSILON) {//0.0f) {
-      radiance += mat->specular * HandleSpecular(ray, depth, ta, sa, normal, cp, pla, ala);
+      radiance += specular * HandleSpecular(ray, depth, ta, sa, normal, cp, pla, ala);
     }
     if (transparency > EPSILON) {//0.0f) {
-      radiance += mat->transparency * HandleRefraction(ray, depth, ta, sa, normal, cp, pla, ala);
+      radiance += transparency * HandleRefraction(ray, depth, ta, sa, normal, cp, pla, ala);
     }
+
     return self_emmitance + radiance;
   }
-                                         
-  cerr << "\nLigg här och gnag... " << endl;
-  return radiance;
+                              
+  if ( depth < 1 )
+    cerr << "\nLigg här och gnag... " << endl;
+
+  return Color(1.f, 0.f, 0.f);//radiance;
 }
 
 void Render(vec3 cam_pos,
@@ -824,7 +881,7 @@ void Render(vec3 cam_pos,
         const Ray ray(pixel_random_point, pixel_random_point - cam_pos);
         temp_color = temp_color + Raytrace(ray, ta, sa, pla, ala, 0);
       }
-      frame_buffer[i][j] = (temp_color / sppf);
+      frame_buffer[i][j] = (temp_color / (float)spp);
     }
     float percentage = 100.f*static_cast<float>(i) / (static_cast<float>(WIDTH) - 1.f);
     double elapsed_time = ((std::clock() - start_time) / ((double)CLOCKS_PER_SEC * 60.0));
@@ -869,9 +926,9 @@ int main() {
   vector<PointLight>  point_light_array;
   vector<Triangle*>   area_light_array;
 
-  vertex_array.reserve(3000);
+  vertex_array.reserve(4000);
   material_array.reserve(32);
-  triangle_array.reserve(3000);
+  triangle_array.reserve(4000);
   //point_light_array.reserve();
   area_light_array.reserve(64);
   sphere_array.reserve(8);
@@ -893,7 +950,7 @@ int main() {
   float newGamma = 1.0f;
   string test;
   stringstream ss;
-  ss << "cornell_" << WIDTH << "x" << HEIGHT << "_" << SAMPLES << "spp_" << MAX_DEPTH << "bounces_";
+  ss << "results/cornell_" << WIDTH << "x" << HEIGHT << "_" << SAMPLES << "spp_" << MAX_DEPTH << "bounces_";
   while (true) {
     stringstream gs;
     gs << setprecision(2) << GAMMA_FACTOR;
