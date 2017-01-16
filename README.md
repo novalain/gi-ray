@@ -1,16 +1,19 @@
 # gi-ray
-A Monte-Carlo raytracer from scratch in C++
+A Monte-Carlo ray tracer from scratch in C++.
 
-#### To compile and run on UNIX system
+### Key Features:
+* Path tracing where the only source of bias comes from path termination
+* Explicit light sampling
+* Ray-triangle intersection using Möller-Trumbore
+* Ray-sphere intersection
+* Lambertian, Specular and Transparent BRDFs
+* Multi-threading
+
+### To compile and run on UNIX system
 * Cd to root folder
 * Run ```make && make run```
 
-
-
-
-
-
-#### To setup Visual Studio 2015
+### To set up Visual Studio 2015
 * Download glm http://glm.g-truc.net/0.9.8/index.html
 * Open Visual Studio
 * File -> New -> Project From Existing Code...
