@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <random>
 #include <omp.h>
 #include <ctime>
@@ -30,10 +31,10 @@ typedef glm::vec3 vec3;
 typedef vec3 Color;
 typedef vector<vector<vec3> > Framebuffer;
 
-const int WIDTH = 50;
-const int HEIGHT = 50;
-const int SAMPLES = 5000;
-const int MAX_DEPTH = 8; // 0 = only point directly seen by camera
+const int WIDTH = 100;
+const int HEIGHT = 100;
+const int SAMPLES = 200;
+const int MAX_DEPTH = 3; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
 const float DIFFUSE_CONTRIBUTION = .80f;
@@ -112,7 +113,10 @@ struct Ray {
   vec3 direction;
 
   Ray(vec3 ori, vec3 dir)
-      : origin(ori), direction(glm::normalize(dir)) {}
+      : origin(ori) {
+        assert(glm::length(dir) > 0);
+        direction = glm::normalize(dir);
+      }
 };
 
 /** Slightly modified version from opengl-tutorial.org,
@@ -120,7 +124,10 @@ struct Ray {
 bool loadOBJ(const char* path,
              std::vector<glm::vec3>& va,
              std::vector<Triangle>& ta,
-             std::vector<Material>& ma) {
+             std::vector<Material>& ma,
+             glm::mat4 translate = glm::mat4(1.f),
+             glm::mat4 rotate = glm::mat4(1.f),
+             glm::mat4 scale = glm::mat4(1.f)) {
   printf("Loading OBJ file %s...\n", path);
 
   std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
@@ -146,18 +153,18 @@ bool loadOBJ(const char* path,
 
     if (strcmp(lineHeader, "v") == 0) {
       glm::vec3 vertex;
-      fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
+      int a =  fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
       temp_vertices.push_back(vertex);
     } else if (strcmp(lineHeader, "vt") == 0) {
       glm::vec2 uv;
-      fscanf(file, "%f %f\n", &uv.x, &uv.y);
+      int a = fscanf(file, "%f %f\n", &uv.x, &uv.y);
       uv.y = -uv.y;  // Invert V coordinate since we will only use DDS texture,
                      // which are inverted. Remove if you want to use TGA or BMP
                      // loaders.
       temp_uvs.push_back(uv);
     } else if (strcmp(lineHeader, "vn") == 0) {
       glm::vec3 normal;
-      fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
+      int a = fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z);
       temp_normals.push_back(normal);
     } else if (strcmp(lineHeader, "f") == 0) {
       std::string vertex1, vertex2, vertex3;
@@ -185,7 +192,7 @@ bool loadOBJ(const char* path,
     } else {
       // Probably a comment, eat up the rest of the line
       char stupidBuffer[1000];
-      fgets(stupidBuffer, 1000, file);
+      char* a = fgets(stupidBuffer, 1000, file);
     }
   }
 
@@ -202,16 +209,19 @@ bool loadOBJ(const char* path,
     glm::vec3 vertex = temp_vertices[vertexIndex - 1];
     glm::vec2 uv = temp_uvs[uvIndex - 1];
     glm::vec3 normal = temp_normals[normalIndex - 1];
+
+    // Transform vertex before put in buffer
+    glm::vec4 transformed_vertex = translate * rotate * scale * glm::vec4(vertex, 1.f);
+
     // Put the attributes in buffers
-    vertices.push_back(vertex);
+    vertices.push_back(glm::vec3(transformed_vertex));
 
     if (count == 2) {
       int v_idx = va.size();
-      va.push_back(vertices[i - 0] * 2.f);
-      va.push_back(vertices[i - 1] * 2.f);
-      va.push_back(vertices[i - 2] * 2.f);
-      ta.push_back(Triangle(&va[v_idx + 0], &va[v_idx + 1], &va[v_idx + 2],
-                            &ma[6]));  // front bottom right
+      va.push_back(vertices[i - 2]);
+      va.push_back(vertices[i - 1]);
+      va.push_back(vertices[i - 0]);
+      ta.push_back(Triangle(&va[v_idx + 0], &va[v_idx + 1], &va[v_idx + 2], &ma[6]));
       count = 0;
       continue;
     }
@@ -397,12 +407,15 @@ void CreateScene(vector<vec3> &va,
     // CreateCube(1.4f, 1.4f, 1.4f, va, ta, ala, &ma[2], true, vec3(2.0f, -1.6f, -1.0f));
     // CreateCube(2.0f, 0.1f, 2.0f, va, ta, ala, &ma[5], true, vec3(0.0f, 4.05f, 0.0f));
     CreateFourTriangleQuad(2.0f, 2.0f, va, ta, ala, &ma[5], false, vec3(0.0f, 4.95f, 0.0f));
-    CreateSphere(1.7f, va, sa, &ma[10], vec3(-2.6f, -2.1f, -0.7f));
+    //CreateSphere(1.7f, va, sa, &ma[10], vec3(-2.6f, -2.1f, -0.7f));
     CreateSphere(1.7f, va, sa, &ma[7], vec3(3.0f, -3.25f, -1.6f));
     CreateSphere(1.3f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
+
     // Create Monkey
-    //bool res =
-      //loadOBJ("data/suzanne.obj", va, ta, ma);
+    glm::mat4 translate = glm::translate(glm::mat4(1.f), glm::vec3(-2.f, -2.f, 1.f));
+    glm::mat4 rotate = glm::rotate(glm::mat4(1.f), 45.f, glm::vec3(0.f, 1.f, 0.f));
+    glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3( 1.f, 1.f, 1.f ) );
+    bool res = loadOBJ("data/suzanne.obj", va, ta, ma, translate, rotate, scale);
   }
   //Create Point Lights
   {
