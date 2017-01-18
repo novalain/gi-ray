@@ -34,7 +34,7 @@ typedef vector<vector<vec3> > Framebuffer;
 const int WIDTH = 100;
 const int HEIGHT = 100;
 const int SAMPLES = 200;
-const int MAX_DEPTH = 3; // 0 = only point directly seen by camera
+const int MAX_DEPTH = 6; // 0 = only point directly seen by camera
 const float EPSILON = 0.00001f;
 const float PI2 =(float) M_PI * 2.0f;
 const float DIFFUSE_CONTRIBUTION = .80f;
@@ -45,7 +45,7 @@ const float REFRACTION_INDEX_AIR = 1.0f;
 const float REFRACTION_INDEX_GLASS = 1.5f;
 const float REFRACTIVE_FACTOR_ENTER_GLASS = REFRACTION_INDEX_AIR / REFRACTION_INDEX_GLASS;
 const float REFRACTIVE_FACTOR_EXIT_GLASS = REFRACTION_INDEX_GLASS / REFRACTION_INDEX_AIR;
-const float CRITICAL_ANGLE = asin(REFRACTIVE_FACTOR_EXIT_GLASS);
+const float CRITICAL_ANGLE = asin(REFRACTIVE_FACTOR_EXIT_GLASS) - EPSILON;
 
 default_random_engine generator;
 uniform_real_distribution<float> distribution(0, 1);
@@ -111,9 +111,10 @@ struct PointLight {
 struct Ray {
   vec3 origin;
   vec3 direction;
+  int diffuse_bounces;
 
-  Ray(vec3 ori, vec3 dir)
-      : origin(ori) {
+  Ray(vec3 ori, vec3 dir, int diffuse_bounces = 0)
+      : origin(ori) , diffuse_bounces(diffuse_bounces) {
         assert(glm::length(dir) > 0);
         direction = glm::normalize(dir);
       }
@@ -124,7 +125,7 @@ struct Ray {
 bool loadOBJ(const char* path,
              std::vector<glm::vec3>& va,
              std::vector<Triangle>& ta,
-             std::vector<Material>& ma,
+             Material* ma,
              glm::mat4 translate = glm::mat4(1.f),
              glm::mat4 rotate = glm::mat4(1.f),
              glm::mat4 scale = glm::mat4(1.f)) {
@@ -221,7 +222,7 @@ bool loadOBJ(const char* path,
       va.push_back(vertices[i - 2]);
       va.push_back(vertices[i - 1]);
       va.push_back(vertices[i - 0]);
-      ta.push_back(Triangle(&va[v_idx + 0], &va[v_idx + 1], &va[v_idx + 2], &ma[6]));
+      ta.push_back(Triangle(&va[v_idx + 0], &va[v_idx + 1], &va[v_idx + 2], ma));
       count = 0;
       continue;
     }
@@ -407,15 +408,15 @@ void CreateScene(vector<vec3> &va,
     // CreateCube(1.4f, 1.4f, 1.4f, va, ta, ala, &ma[2], true, vec3(2.0f, -1.6f, -1.0f));
     // CreateCube(2.0f, 0.1f, 2.0f, va, ta, ala, &ma[5], true, vec3(0.0f, 4.05f, 0.0f));
     CreateFourTriangleQuad(2.0f, 2.0f, va, ta, ala, &ma[5], false, vec3(0.0f, 4.95f, 0.0f));
-    //CreateSphere(1.7f, va, sa, &ma[10], vec3(-2.6f, -2.1f, -0.7f));
-    CreateSphere(1.7f, va, sa, &ma[7], vec3(3.0f, -3.25f, -1.6f));
+    CreateSphere(1.7f, va, sa, &ma[10], vec3(2.6f, -2.1f, -0.7f));
+    //CreateSphere(1.7f, va, sa, &ma[7], vec3(3.0f, -3.25f, -1.6f));
     CreateSphere(1.3f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
 
     // Create Monkey
-    glm::mat4 translate = glm::translate(glm::mat4(1.f), glm::vec3(-2.f, -2.f, 1.f));
-    glm::mat4 rotate = glm::rotate(glm::mat4(1.f), 45.f, glm::vec3(0.f, 1.f, 0.f));
-    glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3( 1.f, 1.f, 1.f ) );
-    bool res = loadOBJ("data/suzanne.obj", va, ta, ma, translate, rotate, scale);
+    glm::mat4 translate = glm::translate(glm::mat4(1.f), glm::vec3(-2.f, -2.f, -2.f));
+    glm::mat4 rotate = glm::rotate(glm::mat4(1.f), 60.f, glm::vec3(0.f, 1.f, 0.f));
+    glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3( 1.5f, 1.5f, 1.5f ) );
+    bool res = loadOBJ("data/suzanne.obj", va, ta, &ma[6], translate, rotate, scale);
   }
   //Create Point Lights
   {
@@ -431,13 +432,15 @@ void SaveImage(const char* img_name, Framebuffer &image) {
   (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
   for (int i = WIDTH - 1; i >= 0; i--) {
     for (int j = 0 ; j < HEIGHT; j++) {
-      float r = image[j][i][0];
-      float g = image[j][i][1];
-      float b = image[j][i][2];
       static unsigned char color[3];
-      color[0] = (int)(255.f * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));  // red
-      color[1] = (int)(255.f * pow(g < 0.0f ? 0.0f : g > 1.0f ? 1.0f : g, gamma_factor_inv));  // green
-      color[2] = (int)(255.f * pow(b < 0.0f ? 0.0f : b > 1.0f ? 1.0f : b, gamma_factor_inv));  // blue
+      for (int c = 0; c < 3; c++) {
+        float r = image[j][i][c];
+        color[c] = (int)(255 * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));
+        if (color[c] < 0 || color[c] > 255)
+          cout << "\nWTF!!\n" << endl;
+        if (isnan(r))
+          cout << "kuk i kuken!" << endl;
+      }
       (void)fwrite(color, 1, 3, fp);
     }
   }
@@ -472,9 +475,7 @@ bool MoellerTrumbore(const Ray &ray, const Triangle &triangle, vec3 &collision_p
   float u = glm::dot(P, T) / det;
   float v = glm::dot(Q, D) / det;
 
-  if (u >= -0.000001f && v >= -0.000001f && u+v <= 1.000001f && t > -0.000001f) {
-  //if (u >= 0.0f && v >= 0.0f && u + v <= 1.000001f && t > 0.0f) {
-
+  if (!signbit(u) && !signbit(v) && u + v < 1.000001f && t > EPSILON) {
     collision_point = (1.0f - u - v) * v0 + u * v1 + v * v2;
     return true;
   }
@@ -666,7 +667,8 @@ Color HandleDiffuse(int depth,
                     const vec3& normal,
                     const vec3& collision_point,
                     const vector<PointLight> &pla,
-                    const vector<Triangle*> &ala) {
+                    const vector<Triangle*> &ala, 
+                    const int& num_diffuse) {
   vec3 w = normal;
   // Generalized formula for finding tangent u given a unit length normal vector w
   vec3 u = glm::normalize(glm::cross(fabs(w.x) > 0.1f ? vec3(0.0f, 1.0f, 0.0f) : vec3(1.0f, 0.0f, 0.0f), w));
@@ -681,7 +683,7 @@ Color HandleDiffuse(int depth,
   vec3 d = glm::normalize(u * (float)cos(r1) * r2s + v*(float)sin(r1) * r2s + w * sqrtf(1.0f - r2));
 
   vec3 reflection_point_origin = collision_point + w * 0.00001f;
-  Ray ray = Ray(reflection_point_origin, d);
+  Ray ray = Ray(reflection_point_origin, d, num_diffuse + 1);
   return DIFFUSE_CONTRIBUTION * Raytrace(ray, ta, sa, pla, ala, ++depth);
 }
 
@@ -696,12 +698,12 @@ Color HandleSpecular(const Ray& ray,
   vec3 n = normal;
   vec3 d = ray.direction;
   // TODO: THIS IS AN ISSUE! it should never happen, right?
-  if (glm::dot(n, d) > 0) {
-    n = -n;
+  //if (glm::dot(n, d) > 0) {
+  //  n = -n;
     //cout << "REVERSING NORMAL IN SPECULAR - THIS MUST BE WRONG - SHOULD NEVER HAPPEN?!" << endl;
-  } else {
+  //} else {
     //cout << "NOT REVERSING NORMAL! THIS SHOULD BE CORRECT?!" << endl;
-  }
+  //}
 
   vec3 reflection_point_origin = collision_point + n * 0.00001f;
   vec3 reflection_direction = d - 2.f * (glm::dot(d, n))*n;
@@ -722,41 +724,82 @@ Color HandleRefraction(const Ray& ray,
   float I_dot_n = glm::dot(n,I);
   float refractive_factor, n1, n2, alpha;
   
+/*  if (alpha < -.99999f && alpha > -1.00001f)
+    alpha = -0.99999f;
+  else if 
+    (alpha > .99999f && alpha < 1.00001f)
+    alpha = 0.99999f;
+    */
+  if (I_dot_n > 0.99999f)
+    I_dot_n = 0.99999f;
+  else if (I_dot_n < -0.99999f)
+    I_dot_n = -0.99999f;
+
   // From outside going in
-  if (I_dot_n < 0.0f) {
+  if (signbit(I_dot_n)) {
     n1 = REFRACTION_INDEX_AIR;
     n2 = REFRACTION_INDEX_GLASS;
+
     refractive_factor = REFRACTIVE_FACTOR_ENTER_GLASS;
+
     alpha = acos(-I_dot_n);
   } else { // From inside going out
     n1 = REFRACTION_INDEX_GLASS;
     n2 = REFRACTION_INDEX_AIR;
+
     refractive_factor = REFRACTIVE_FACTOR_EXIT_GLASS;
+
     n = -n; // inwards normal
+
     alpha = acos(I_dot_n);
+
     I_dot_n *= -1;// glm::dot(n, -I);
+
     if ( alpha > CRITICAL_ANGLE ) { // total inner reflection occurs (only reflection term)
       return HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);
     }
   }
-  vec3 Tvec = refractive_factor * I + n * (-refractive_factor * I_dot_n -
-      sqrtf(1.f - refractive_factor * refractive_factor * (1.f - I_dot_n * I_dot_n)));
-  vec3 refraction_point_origin = collision_point - n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
-  Ray refraction_ray = Ray(refraction_point_origin, Tvec);
 
   // Distribute radiance in reflection and refraction directions
   float c = cos(alpha);
   float n1c = n1*c;
   float n2c = n2*c;
-  float sr = sqrt(1.0f - pow(refractive_factor * sin(alpha), 2.f));
+  float sinalpha = sin(alpha);
+  float ppow = pow(refractive_factor * sin(alpha), 2.f);
+  float sr = 1.0f - pow(refractive_factor * sin(alpha), 2.f); //TODO: make sure expression is not negative?!
+  if (signbit(sr))
+    cout << "WILL CAUSE ERROR" << endl;
+  sr = sqrtf(sr);
+
+  if (isnan(sr)) 
+    cout << "HÄR ÄRE FEL!" << endl;
   float n2sr = n2*sr;
   float n1sr = n1*sr;
   float Rs = pow((n1c - n2sr) / (n1c + n2sr), 2.f);
   float Rp = pow((n1sr - n2c) / (n1sr + n2c), 2.f);
   float R = (Rs + Rp) / 2.f;
   float T = 1.f - R;
+  float srf = 1.f - refractive_factor * refractive_factor * (1.f - I_dot_n * I_dot_n);
 
-  return T * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth) + R * HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);;
+  if (T < EPSILON || signbit(srf)) {
+    //cout << "\nT: " << T << "\tR: " << R << endl;
+    return HandleSpecular(ray, depth, ta, sa,  n, collision_point, pla, ala);
+  } 
+
+  vec3 Tvec = refractive_factor * I + n * (-refractive_factor * I_dot_n - sqrtf(srf));
+  if (glm::length(Tvec) < EPSILON) {
+    cout << "\nSTILL HAPPENING" << endl;
+    return HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);
+  }
+  vec3 refraction_point_origin = collision_point - n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
+  Ray refraction_ray = Ray(refraction_point_origin, Tvec);
+  
+  if (R < EPSILON) {
+    cout << " \nR: " << R << "\tT: " << T << endl;
+    return Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
+  }
+
+  return T * Raytrace(refraction_ray, ta, sa, pla, ala, ++depth) + R * HandleSpecular(ray, depth, ta, sa, n, collision_point, pla, ala);
 }
 
 Color Raytrace(const Ray& ray,
@@ -766,9 +809,9 @@ Color Raytrace(const Ray& ray,
                const vector<Triangle*>& ala,
                unsigned int depth) {
   Color radiance = Color(0.0f, 0.0f, 0.0f);
-
+  int diff_bounces = ray.diffuse_bounces;
   // BREAK RECURISVENESS IF MAX DEPTH HAS BEEN REACHED
-  if (depth > MAX_DEPTH) {
+  if (depth > MAX_DEPTH  || diff_bounces > 2) {
     return radiance;
   }
 
@@ -794,7 +837,7 @@ Color Raytrace(const Ray& ray,
     //radiance += HandleDirectIllumination(pla, ala, ta, triangle, collision_point);
 
     if (diffuse > EPSILON) {//0.0f) {
-      radiance += mat->diffuse * HandleDiffuse(depth, ta, sa, normal, cp, pla, ala) *  mat->color;
+      radiance += mat->diffuse * HandleDiffuse(depth, ta, sa, normal, cp, pla, ala, diff_bounces) *  mat->color;
     }
 
     if (specular > EPSILON) {//0.0f) {
@@ -805,8 +848,10 @@ Color Raytrace(const Ray& ray,
     }
     return self_emmitance + radiance;
   }
-                                         
-  cerr << "\nLigg här och gnag... " << endl;
+                              
+  if ( depth < 1 )
+    cerr << "\nLigg här och gnag... " << endl;
+
   return radiance;
 }
 
