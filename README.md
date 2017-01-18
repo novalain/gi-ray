@@ -1,6 +1,13 @@
 # gi-ray
 A Monte-Carlo ray tracer from scratch in C++.
 
+<p align="center">
+  <img src="Example_Images/cornell_512x512_10000spp_7bounces_3.5gamma.png" width = "512"/>
+</p>
+<p align="center">
+  Generated using 10,000 samples/pixel with a ray depth of 7.
+</p>
+
 ### Key Features:
 * Path tracing where the only source of bias comes from path termination
 * Explicit light sampling
