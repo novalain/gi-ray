@@ -895,7 +895,7 @@ void Render(vec3 cam_pos,
     double elapsed_time = ((std::clock() - start_time) / ((double)CLOCKS_PER_SEC * 60.0));
     double est_total_time = (100.0/(percentage))*elapsed_time;
     double est_time_left = est_total_time - elapsed_time;
-    fprintf(stderr, "\r\tProgress:  %1.2f%%, \tEstimated time left:  %.1f min", percentage, est_time_left);
+    fprintf(stderr, "\r\tCurrent sampling level: %dspp, \tProgress:  %1.2f%%, \tEstimated time left:  %.1f min", s+1, percentage, est_time_left);
     //fprintf(stderr, "\r\tRender Progress:  %1.2f%%, \tElapsed time:  %.1f min, \tEstimated total time:  %.1f min, \tEstimated time left:  %.1f min", percentage, elapsed_time, est_total_time, est_time_left);
   }
   cout << endl;
