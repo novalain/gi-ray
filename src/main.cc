@@ -413,10 +413,12 @@ void CreateScene(vector<vec3> &va,
     CreateSphere(1.3f, va, sa, &ma[6], vec3(0.f, 1.f, -1.5f));
 
     // Create Monkey
+   /*
     glm::mat4 translate = glm::translate(glm::mat4(1.f), glm::vec3(-2.f, -2.f, -2.f));
     glm::mat4 rotate = glm::rotate(glm::mat4(1.f), 60.f, glm::vec3(0.f, 1.f, 0.f));
     glm::mat4 scale = glm::scale(glm::mat4(1.f), glm::vec3( 1.5f, 1.5f, 1.5f ) );
     bool res = loadOBJ("data/suzanne.obj", va, ta, &ma[6], translate, rotate, scale);
+  */
   }
   //Create Point Lights
   {
@@ -426,7 +428,7 @@ void CreateScene(vector<vec3> &va,
   }
 }
 
-void SaveImage(const char* img_name, Framebuffer &image) {
+void SaveImage(const char* img_name, Framebuffer &image, int d = 0) {
   float gamma_factor_inv = 1.0f / GAMMA_FACTOR;
   FILE* fp = fopen(img_name, "wb"); /* b - binary mode */
   (void)fprintf(fp, "P6\n%d %d\n255\n", WIDTH, HEIGHT);
@@ -434,7 +436,7 @@ void SaveImage(const char* img_name, Framebuffer &image) {
     for (int j = 0 ; j < HEIGHT; j++) {
       static unsigned char color[3];
       for (int c = 0; c < 3; c++) {
-        float r = image[j][i][c];
+        float r = d == 0 ? image[j][i][c] : image[j][i][c] / static_cast<float>(d);
         color[c] = (int)(255 * pow(r < 0.0f ? 0.0f : r > 1.0f ? 1.0f : r, gamma_factor_inv));
         if (color[c] < 0 || color[c] > 255)
           cout << "\nWTF!!\n" << endl;
@@ -453,7 +455,7 @@ void ClearColorBuffer(Color clear_color, Framebuffer &frame_buffer) {
       frame_buffer[x][y] = clear_color;
     }
   }
-}   
+}
 
 bool MoellerTrumbore(const Ray &ray, const Triangle &triangle, vec3 &collision_point) {
   vec3 ps = ray.origin;
@@ -723,10 +725,10 @@ Color HandleRefraction(const Ray& ray,
   vec3 I = ray.direction;
   float I_dot_n = glm::dot(n,I);
   float refractive_factor, n1, n2, alpha;
-  
+
 /*  if (alpha < -.99999f && alpha > -1.00001f)
     alpha = -0.99999f;
-  else if 
+  else if
     (alpha > .99999f && alpha < 1.00001f)
     alpha = 0.99999f;
     */
@@ -767,12 +769,11 @@ Color HandleRefraction(const Ray& ray,
   float sinalpha = sin(alpha);
   float ppow = pow(refractive_factor * sin(alpha), 2.f);
   float sr = 1.0f - pow(refractive_factor * sin(alpha), 2.f); //TODO: make sure expression is not negative?!
-  if (signbit(sr))
-    cout << "WILL CAUSE ERROR" << endl;
+  // if (isnan(sr))
+  //   cout << "HÄR ÄRE FEL!" << endl;
+  // if (signbit(sr))
+  //   cout << "WILL CAUSE ERROR" << endl;
   sr = sqrtf(sr);
-
-  if (isnan(sr)) 
-    cout << "HÄR ÄRE FEL!" << endl;
   float n2sr = n2*sr;
   float n1sr = n1*sr;
   float Rs = pow((n1c - n2sr) / (n1c + n2sr), 2.f);
@@ -784,7 +785,7 @@ Color HandleRefraction(const Ray& ray,
   if (T < EPSILON || signbit(srf)) {
     //cout << "\nT: " << T << "\tR: " << R << endl;
     return HandleSpecular(ray, depth, ta, sa,  n, collision_point, pla, ala);
-  } 
+  }
 
   vec3 Tvec = refractive_factor * I + n * (-refractive_factor * I_dot_n - sqrtf(srf));
   if (glm::length(Tvec) < EPSILON) {
@@ -793,7 +794,7 @@ Color HandleRefraction(const Ray& ray,
   }
   vec3 refraction_point_origin = collision_point - n * EPSILON; //TODO: Changed to addition from subtraction.. wrong or correct?
   Ray refraction_ray = Ray(refraction_point_origin, Tvec);
-  
+
   if (R < EPSILON) {
     cout << " \nR: " << R << "\tT: " << T << endl;
     return Raytrace(refraction_ray, ta, sa, pla, ala, ++depth);
@@ -848,7 +849,7 @@ Color Raytrace(const Ray& ray,
     }
     return self_emmitance + radiance;
   }
-                              
+
   if ( depth < 1 )
     cerr << "\nLigg här och gnag... " << endl;
 
@@ -864,15 +865,19 @@ void Render(vec3 cam_pos,
             const float& delta,
             const float& pixel_center_minimum,
             const double& start_time,
+            const string& filename,
             const int& spp) {
   float delta2 = delta - (delta / 2.0f);
   float sppf = static_cast<float>(spp);
   cout << "Rendering!" << endl;
-  #pragma omp parallel for schedule(dynamic, 1)
-  for (int i = 0; i < WIDTH; i++) {
+  auto fnc = filename.c_str();
+  //SaveImg(fnc);
+  for (int s = 0; s < spp; s++) {
     for (int j = 0; j < HEIGHT; j++) {
-      Color temp_color = Color(0.0f, 0.0f, 0.0f);
-      for (int s = 0; s < spp; s++) {
+      #pragma omp parallel for schedule(dynamic, 1)
+      for (int i = WIDTH - 1; i >= 0; i--) {
+        Color temp_color = Color(0.0f, 0.0f, 0.0f);
+
         float random_x = distribution(generator) * delta2;
         float random_y = distribution(generator) * delta2;
 
@@ -881,10 +886,12 @@ void Render(vec3 cam_pos,
                  j * delta + pixel_center_minimum + random_y, 4.0f);
         const Ray ray(pixel_random_point, pixel_random_point - cam_pos);
         temp_color = temp_color + Raytrace(ray, ta, sa, pla, ala, 0);
+        frame_buffer[i][j] += (temp_color /* sppf*/);
       }
-      frame_buffer[i][j] = (temp_color / sppf);
     }
-    float percentage = 100.f*static_cast<float>(i) / (static_cast<float>(WIDTH) - 1.f);
+    SaveImage(fnc, frame_buffer, s+1);
+
+    float percentage = 100.f*static_cast<float>(s) / (static_cast<float>(spp) - 1.f);
     double elapsed_time = ((std::clock() - start_time) / ((double)CLOCKS_PER_SEC * 60.0));
     double est_total_time = (100.0/(percentage))*elapsed_time;
     double est_time_left = est_total_time - elapsed_time;
@@ -906,7 +913,7 @@ int main() {
   #endif
 
   // Create camera
-  vec3 camera_pos = vec3(0.0f, 0.0f, 4.95f);
+  vec3 camera_pos = vec3(0.0f, 0.0f, 4.99f);
   vec3 camera_plane[4];
   camera_plane[0] = vec3(-1.0f,-1.0f, 4.0f);
   camera_plane[1] = vec3( 1.0f,-1.0f, 4.0f);
@@ -918,7 +925,7 @@ int main() {
 
   Framebuffer frame_buffer(WIDTH, vector<vec3>(HEIGHT));
 
-  ClearColorBuffer(Color(1.0f, 0.2f, 0.9f), frame_buffer);
+  ClearColorBuffer(Color(0.0f, 0.0f, 0.0f), frame_buffer);
 
   vector<vec3>        vertex_array;
   vector<Material>    material_array;
@@ -938,8 +945,14 @@ int main() {
   CreateScene(vertex_array, triangle_array, sphere_array, material_array,
               point_light_array, area_light_array);
 
+  stringstream ss;
+  stringstream gs;
+  ss << "cornell_" << WIDTH << "x" << HEIGHT << "_" << SAMPLES << "spp_" << MAX_DEPTH << "bounces_";
+  gs << setprecision(2) << GAMMA_FACTOR;
+  string filename = ss.str() + gs.str() + "gamma.ppm";
+
   Render(camera_pos, triangle_array, sphere_array, point_light_array, area_light_array,
-       frame_buffer, delta, pixel_center_minimum, start, SAMPLES);
+       frame_buffer, delta, pixel_center_minimum, start, filename, SAMPLES);
 
   double cpu_duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     std::cout << "\nCPU wall time: " << cpu_duration;
@@ -950,14 +963,9 @@ int main() {
 
   float newGamma = 1.0f;
   string test;
-  stringstream ss;
-  ss << "cornell_" << WIDTH << "x" << HEIGHT << "_" << SAMPLES << "spp_" << MAX_DEPTH << "bounces_";
   while (true) {
-    stringstream gs;
-    gs << setprecision(2) << GAMMA_FACTOR;
-    string filename = ss.str() + gs.str() + "gamma.ppm";
     cout << "Render DONE!\nWriting to file: " << filename << endl;
-    SaveImage(filename.c_str(), frame_buffer);
+    SaveImage(filename.c_str(), frame_buffer, SAMPLES);
     cout << "Enter new gamma value: " << endl;
     cin >> test;
     newGamma = stof(test);
@@ -965,6 +973,9 @@ int main() {
       break;
     }
     GAMMA_FACTOR = newGamma;
+    gs.str(std::string());
+    gs << GAMMA_FACTOR;
+    filename = ss.str() + gs.str() + "gamma.ppm";
   }
 
   cout << "\nGI-Ray finished without any problems" << endl;
